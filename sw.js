@@ -1,5 +1,5 @@
 /* TITAN admin — يعمل بدون إنترنت، لكنه يطلب أحدث نسخة أولاً حتى لا تبقى بيانات قديمة */
-var CACHE = 'titan-admin-v1';
+var CACHE = 'titan-admin-v2';
 var FILES = ['admin.html', 'style.css', 'data.js', 'admin.webmanifest', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', function (e) {
@@ -12,6 +12,7 @@ self.addEventListener('activate', function (e) {
 });
 self.addEventListener('fetch', function (e) {
   if (e.request.method !== 'GET') return;
+  if (new URL(e.request.url).origin !== self.location.origin) return;
   e.respondWith(
     fetch(e.request, { cache: 'no-store' }).then(function (res) {
       var copy = res.clone();
