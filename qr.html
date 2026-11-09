@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>TITAN — طباعة رمز QR</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .wrap { max-width: 560px; }
+  .panel { background: var(--bg-2); border: 1.5px solid var(--line); border-radius: var(--radius); padding: 16px; margin-top: 18px; }
+  .fld { display: block; margin-bottom: 12px; }
+  .fld span { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  input.t { width: 100%; background: var(--card); border: 1.5px solid var(--line); color: var(--text); font-size: 15px; padding: 11px 13px; border-radius: 11px; outline: none; direction: ltr; text-align: left; font-family: system-ui, sans-serif; }
+  input.t:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-glow); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn { background: var(--card); border: 1.5px solid var(--line); color: var(--text); padding: 11px 18px; border-radius: 11px; font-size: 14px; font-weight: 700; }
+  .btn:hover { border-color: var(--blue); }
+  .btn.primary { background: var(--blue); border-color: var(--blue); box-shadow: 0 0 18px var(--blue-glow); }
+  .note { color: var(--muted); font-size: 12.5px; line-height: 1.8; margin: 8px 0 0; }
+  .warn { color: #ffd479; }
+
+  /* بطاقة الطباعة */
+  .card {
+    margin: 22px auto 0; width: 100%; max-width: 380px; text-align: center;
+    background: #05070b; border: 2px solid var(--blue); border-radius: 22px; padding: 26px 22px 22px;
+    box-shadow: 0 0 40px var(--blue-glow);
+    background-image: radial-gradient(420px 200px at 50% -60px, rgba(31,107,255,.35), transparent 70%);
+  }
+  .card .wordmark { font-size: 54px; }
+  .card .shop { font-size: 20px; font-weight: 800; margin: 4px 0 0; }
+  .card .qrbox { background: #fff; border-radius: 16px; padding: 14px; margin: 18px auto 14px; width: 250px; height: 250px; }
+  .card .qrbox svg { width: 100%; height: 100%; display: block; }
+  .card .cta { font-size: 19px; font-weight: 800; margin: 0; }
+  .card .sub { color: #9fb2d4; font-size: 13.5px; margin: 6px 0 0; }
+  .card.light { background: #fff; background-image: none; color: #05070b; border-color: #05070b; box-shadow: none; }
+  .card.light .qrbox { border: 2px solid #05070b; }
+  .card.light .sub { color: #44506a; }
+  .card.light .wordmark { background: none; color: #05070b; -webkit-text-fill-color: #05070b; filter: none; }
+
+  @media print {
+    @page { margin: 10mm; }
+    body { background: #fff !important; }
+    .noprint { display: none !important; }
+    .card { margin: 0 auto; box-shadow: none; max-width: 100%; width: 100mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    footer { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="noprint">
+    <div class="topbar"><a class="back" href="admin.html" style="display:grid;place-items:center" aria-label="رجوع">›</a>
+      <div><h2 class="page-title" style="font-size:20px">طباعة رمز QR</h2><p class="page-sub">يمسحه الزبون ليفتح الموقع مباشرة</p></div></div>
+
+    <div class="panel">
+      <label class="fld"><span>رابط الموقع (بعد رفعه على الإنترنت)</span>
+        <input class="t" id="url" placeholder="https://titan-shop.netlify.app" inputmode="url"></label>
+      <p class="note warn" id="warn" hidden>هذا الرابط يعمل على جهازك فقط. ارفع الموقع على استضافة واكتب الرابط العام قبل الطباعة.</p>
+      <div class="row" style="margin-top:12px">
+        <button class="btn primary" id="print">طباعة</button>
+        <button class="btn" id="png">تنزيل QR كصورة</button>
+        <button class="btn" id="theme">نمط: داكن</button>
+      </div>
+      <p class="note">اختر «نمط فاتح» لتوفير الحبر عند الطباعة على ورق أبيض. جرّب مسح الرمز بهاتفك قبل طباعة نسخ كثيرة.</p>
+    </div>
+  </div>
+
+  <div class="card" id="card">
+    <h1 class="wordmark">TITAN</h1>
+    <p class="shop" id="shop"></p>
+    <div class="qrbox" id="qrbox"></div>
+    <p class="cta">امسح الرمز و اختر نوع هاتفك</p>
+    <p class="sub">كفرات لكل الموديلات</p>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="qr-lib.js"></script>
+<script>
+(function () {
+  var D = window.TITAN_DATA || { shop: {} };
+  var $ = function (id) { return document.getElementById(id); };
+  var KEY = 'titan_qr_url';
+  var url = $('url'), light = false, rows = null;
+
+  $('shop').textContent = (D.shop && D.shop.name) || '';
+
+  var fromHost = '';
+  if (/^https?:$/.test(location.protocol)) fromHost = location.href.replace(/[^\/]*$/, '') + 'index.html';
+  var saved = ''; try { saved = localStorage.getItem(KEY) || ''; } catch (e) {}
+  url.value = (D.shop && D.shop.siteUrl) || saved || fromHost;
+
+  function msg(t) {
+    $('qrbox').innerHTML = '<div style="height:100%;display:grid;place-items:center;text-align:center;color:#05070b;font-weight:700;font-size:15px;padding:8px">' + t + '</div>';
+  }
+
+  function draw() {
+    try {
+      var v = url.value.trim();
+      try { localStorage.setItem(KEY, v); } catch (e) {}
+      rows = null;
+      if (!v) { $('warn').hidden = true; msg('اكتب رابط الموقع في الخانة'); return; }
+      if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(v)) v = 'https://' + v;
+      var local = /^(https?:\/\/)?(localhost|127\.|192\.168\.|10\.)/i.test(v) || /^file:/i.test(v);
+      $('warn').hidden = !local;
+      rows = window.TitanQR.make(v, 'M');
+      var n = rows.length, d = '';
+      for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (rows[r][c]) d += 'M' + c + ' ' + r + 'h1v1h-1z';
+      $('qrbox').innerHTML = '<svg viewBox="0 0 ' + n + ' ' + n + '" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">' +
+        '<rect width="' + n + '" height="' + n + '" fill="#fff"/><path d="' + d + '" fill="#000"/></svg>';
+    } catch (err) {
+      rows = null;
+      msg('تعذّر إنشاء الرمز، تأكد من الرابط');
+    }
+  }
+  url.addEventListener('input', draw);
+  draw();
+
+  $('print').onclick = function () { window.print(); };
+  $('theme').onclick = function () {
+    light = !light; $('card').classList.toggle('light', light);
+    this.textContent = 'نمط: ' + (light ? 'فاتح' : 'داكن');
+  };
+  $('png').onclick = function () {
+    if (!rows) return;
+    var n = rows.length, quiet = 4, scale = Math.ceil(1000 / (n + quiet * 2));
+    var size = (n + quiet * 2) * scale;
+    var cv = document.createElement('canvas'); cv.width = cv.height = size;
+    var x = cv.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, size, size); x.fillStyle = '#000';
+    for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (rows[r][c]) x.fillRect((c + quiet) * scale, (r + quiet) * scale, scale, scale);
+    var a = document.createElement('a'); a.href = cv.toDataURL('image/png'); a.download = 'titan-qr.png';
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+})();
+</script>
+</body>
+</html>

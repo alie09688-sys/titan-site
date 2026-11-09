@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05070b">
+<title>TITAN — كفرات الهواتف</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="logo">
+    <h1 class="wordmark">TITAN</h1>
+    <div class="bar"></div>
+    <p class="shopname" id="shopName"></p>
+    <p class="tagline" id="shopTag"></p>
+  </header>
+
+  <div class="search">
+    <input id="q" type="search" inputmode="search" autocomplete="off" placeholder="اكتب نوع هاتفك... مثال: Hot 10 أو Smart 8">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+  </div>
+
+  <main id="view"></main>
+
+  <footer><b>TITAN</b> &nbsp;·&nbsp; <span id="footName"></span></footer>
+</div>
+
+<script src="data.js"></script>
+<script>
+(function () {
+  var D = window.TITAN_DATA || { shop: {}, brands: [] };
+  var shop = D.shop || {};
+  var view = document.getElementById('view');
+  var q = document.getElementById('q');
+
+  document.getElementById('shopName').textContent = shop.name || '';
+  document.getElementById('shopTag').textContent = shop.tagline || '';
+  document.getElementById('footName').textContent = shop.name || '';
+  if (shop.name) document.title = 'TITAN — ' + shop.name;
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  // تبسيط النص للبحث: حروف صغيرة بدون مسافات أو شرطات
+  function norm(s) { return String(s).toLowerCase().replace(/[\s\-_.]+/g, ''); }
+
+  function brandCount(b) {
+    return (b.series || []).reduce(function (n, s) { return n + (s.models || []).length; }, 0);
+  }
+
+  function waLink(brandName, model) {
+    var num = String(shop.whatsapp || '').replace(/[^\d]/g, '');
+    if (!num) return null;
+    var txt = 'مرحبا، أريد كفر لهاتف ' + brandName + ' ' + model;
+    return 'https://wa.me/' + num + '?text=' + encodeURIComponent(txt);
+  }
+
+  function modelHTML(brandName, m, showBrand) {
+    var link = waLink(brandName, m);
+    var inner = '<span>' + esc(m) + '</span>' +
+      (showBrand ? '<span class="brandtag">' + esc(brandName) + '</span>' : (link ? '<span class="tag">اطلب ›</span>' : ''));
+    return link
+      ? '<a class="model" href="' + link + '" target="_blank" rel="noopener">' + inner + '</a>'
+      : '<div class="model">' + inner + '</div>';
+  }
+
+  /* ---------- الصفحة الرئيسية ---------- */
+  function home() {
+    var h = '<div class="section-title">اختر نوع هاتفك</div><div class="brands">';
+    D.brands.forEach(function (b) {
+      var n = brandCount(b);
+      h += '<button class="brand' + (n ? '' : ' empty') + '" data-id="' + esc(b.id) + '">' +
+        '<span class="n">' + esc(b.name) + '</span>' +
+        '<span class="c">' + (n ? n + ' موديل' : 'قريباً') + '</span></button>';
+    });
+    h += '</div>';
+    if (shop.whatsapp) h += '<p class="hint">لم تجد هاتفك؟ راسلنا على واتساب وسنؤمّن لك الكفر.</p>';
+    view.innerHTML = h;
+  }
+
+  /* ---------- صفحة ماركة ---------- */
+  function brandPage(id, serieIdx) {
+    var b = D.brands.filter(function (x) { return x.id === id; })[0];
+    if (!b) { location.hash = ''; return; }
+    var series = (b.series || []).filter(function (s) { return (s.models || []).length; });
+
+    var h = '<div class="topbar"><button class="back" id="back" aria-label="رجوع">›</button>' +
+      '<div><h2 class="page-title">' + esc(b.name) + '</h2><p class="page-sub">' + brandCount(b) + ' موديل متوفر</p></div></div>';
+
+    if (!series.length) {
+      h += '<div class="empty-state">لا توجد كفرات لهذه الماركة حالياً.<br>' +
+        (shop.whatsapp ? 'راسلنا على واتساب وسنؤمّنها لك.' : 'اسأل البائع في المحل.') + '</div>';
+      view.innerHTML = h; bindBack(); return;
+    }
+
+    var cur = serieIdx == null ? -1 : serieIdx; // -1 = الكل
+    if (series.length > 1) {
+      h += '<div class="chips"><button class="chip' + (cur === -1 ? ' on' : '') + '" data-s="-1">الكل</button>';
+      series.forEach(function (s, i) { h += '<button class="chip' + (cur === i ? ' on' : '') + '" data-s="' + i + '">' + esc(s.name) + '</button>'; });
+      h += '</div>';
+    }
+    series.forEach(function (s, i) {
+      if (cur !== -1 && cur !== i) return;
+      h += '<div class="series-head"><span>' + esc(s.name) + '</span></div><div class="models">';
+      s.models.forEach(function (m) { h += modelHTML(b.name, m, false); });
+      h += '</div>';
+    });
+    if (shop.whatsapp) h += '<p class="hint">اضغط على الموديل لطلب الكفر عبر واتساب.</p>';
+
+    view.innerHTML = h;
+    bindBack();
+    Array.prototype.forEach.call(view.querySelectorAll('.chip'), function (c) {
+      c.onclick = function () { brandPage(id, parseInt(c.getAttribute('data-s'), 10)); window.scrollTo(0, 0); };
+    });
+  }
+
+  function bindBack() {
+    var b = document.getElementById('back');
+    if (b) b.onclick = function () { location.hash = ''; };
+  }
+
+  /* ---------- نتائج البحث ---------- */
+  function searchPage(text) {
+    var t = norm(text);
+    var res = [];
+    D.brands.forEach(function (b) {
+      (b.series || []).forEach(function (s) {
+        (s.models || []).forEach(function (m) {
+          // يطابق اسم الموديل أو الماركة + الموديل (مثال: infinix hot 9)
+          if (norm(m).indexOf(t) !== -1 || norm(b.name + m).indexOf(t) !== -1 || norm(s.name + m).indexOf(t) !== -1) {
+            res.push({ brand: b.name, model: m });
+          }
+        });
+      });
+    });
+    var h = '<div class="section-title">نتائج البحث (' + res.length + ')</div>';
+    if (!res.length) {
+      h += '<div class="empty-state">لم نجد كفراً لهذا الموديل.<br>' +
+        (shop.whatsapp ? 'راسلنا على واتساب وسنؤمّنه لك.' : 'اسأل البائع في المحل.') + '</div>';
+    } else {
+      h += '<div class="models">';
+      res.forEach(function (r) { h += modelHTML(r.brand, r.model, true); });
+      h += '</div>';
+    }
+    view.innerHTML = h;
+  }
+
+  /* ---------- التوجيه ---------- */
+  function route() {
+    var text = q.value.trim();
+    if (text) { searchPage(text); return; }
+    var m = location.hash.match(/^#\/brand\/(.+)$/);
+    if (m) { brandPage(decodeURIComponent(m[1])); } else { home(); }
+  }
+
+  view.addEventListener('click', function (e) {
+    var el = e.target.closest ? e.target.closest('.brand') : null;
+    if (el) { location.hash = '#/brand/' + encodeURIComponent(el.getAttribute('data-id')); window.scrollTo(0, 0); }
+  });
+  q.addEventListener('input', route);
+  window.addEventListener('hashchange', function () { q.value = ''; route(); window.scrollTo(0, 0); });
+  route();
+})();
+</script>
+</body>
+</html>

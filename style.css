@@ -1,0 +1,143 @@
+/* TITAN — الأسود والأزرق */
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Cairo:wght@400;600;700;800&display=swap");
+
+:root {
+  --bg: #05070b;
+  --bg-2: #0a0f18;
+  --card: #0d1422;
+  --line: #17233a;
+  --blue: #1f6bff;
+  --blue-2: #4d90ff;
+  --blue-glow: rgba(31, 107, 255, 0.35);
+  --text: #eaf1ff;
+  --muted: #7f8ea8;
+  --radius: 14px;
+  --font-ar: "Cairo", system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+  --font-en: "Orbitron", "Segoe UI", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ar);
+  min-height: 100vh;
+  background-image:
+    radial-gradient(900px 420px at 50% -120px, rgba(31, 107, 255, 0.28), transparent 70%),
+    linear-gradient(rgba(31, 107, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31, 107, 255, 0.04) 1px, transparent 1px);
+  background-size: auto, 38px 38px, 38px 38px;
+  background-attachment: fixed;
+}
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+
+.wrap { max-width: 760px; margin: 0 auto; padding: 0 16px 56px; }
+
+/* ---------- الشعار ---------- */
+.logo { text-align: center; padding: 34px 0 6px; }
+.wordmark {
+  font-family: var(--font-en);
+  font-weight: 900;
+  font-size: clamp(44px, 14vw, 78px);
+  letter-spacing: 0.14em;
+  margin: 0;
+  padding-left: 0.14em;
+  line-height: 1;
+  background: linear-gradient(180deg, #ffffff 0%, #8db8ff 55%, #1f6bff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 22px var(--blue-glow));
+}
+.bar {
+  width: 120px; height: 3px; margin: 14px auto 12px; border-radius: 3px;
+  background: linear-gradient(90deg, transparent, var(--blue), transparent);
+  box-shadow: 0 0 14px var(--blue);
+}
+.shopname { font-size: 22px; font-weight: 800; margin: 0; }
+.tagline { color: var(--muted); margin: 4px 0 0; font-size: 14px; }
+
+/* ---------- البحث ---------- */
+.search { position: relative; margin: 26px 0 8px; }
+.search input {
+  width: 100%;
+  background: var(--card);
+  border: 1.5px solid var(--line);
+  color: var(--text);
+  font-family: var(--font-ar);
+  font-size: 17px;
+  padding: 15px 50px 15px 16px;
+  border-radius: var(--radius);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search input::placeholder { color: var(--muted); }
+.search input:focus { border-color: var(--blue); box-shadow: 0 0 0 4px var(--blue-glow); }
+.search svg { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; stroke: var(--blue-2); fill: none; stroke-width: 2.2; pointer-events: none; }
+
+.section-title { font-size: 13px; color: var(--muted); letter-spacing: .06em; margin: 26px 2px 12px; display: flex; align-items: center; gap: 10px; }
+.section-title::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+/* ---------- أزرار الماركات ---------- */
+.brands { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+@media (min-width: 560px) { .brands { grid-template-columns: repeat(3, 1fr); } }
+.brand {
+  position: relative; overflow: hidden;
+  background: linear-gradient(160deg, var(--card), var(--bg-2));
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 22px 12px 16px;
+  text-align: center;
+  transition: transform .12s, border-color .15s, box-shadow .15s;
+}
+.brand:hover, .brand:active { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-glow), 0 10px 30px rgba(0,0,0,.4); transform: translateY(-2px); }
+.brand .n { font-family: var(--font-en); font-weight: 800; font-size: 17px; letter-spacing: .04em; display: block; }
+.brand .c { display: block; margin-top: 8px; font-size: 12px; color: var(--blue-2); }
+.brand.empty { opacity: .55; }
+.brand.empty .c { color: var(--muted); }
+
+/* ---------- صفحة الماركة ---------- */
+.topbar { display: flex; align-items: center; gap: 12px; padding: 18px 0 4px; }
+.back {
+  background: var(--card); border: 1.5px solid var(--line); color: var(--text);
+  width: 44px; height: 44px; border-radius: 12px; font-size: 20px; flex-shrink: 0;
+}
+.back:hover { border-color: var(--blue); }
+.page-title { font-family: var(--font-en); font-weight: 900; font-size: 26px; letter-spacing: .05em; margin: 0; }
+.page-sub { color: var(--muted); font-size: 13px; margin: 0; }
+
+.chips { display: flex; gap: 8px; overflow-x: auto; padding: 14px 0 6px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+  flex-shrink: 0; background: var(--card); border: 1.5px solid var(--line); color: var(--text);
+  padding: 8px 16px; border-radius: 999px; font-family: var(--font-en); font-weight: 600; font-size: 13px; letter-spacing: .05em;
+}
+.chip.on { background: var(--blue); border-color: var(--blue); box-shadow: 0 0 18px var(--blue-glow); }
+
+.series-head {
+  font-family: var(--font-en); font-weight: 800; letter-spacing: .12em; font-size: 15px;
+  color: var(--blue-2); margin: 24px 2px 12px; display: flex; align-items: center; gap: 10px;
+}
+.series-head::before, .series-head::after { content: ""; height: 1px; background: var(--line); flex: 1; }
+.series-head span { padding: 0 2px; }
+
+.models { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; direction: ltr; }
+@media (min-width: 560px) { .models { grid-template-columns: repeat(3, 1fr); } }
+.model {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  background: var(--card); border: 1.5px solid var(--line); border-radius: 12px;
+  padding: 13px 14px; font-family: var(--font-en); font-weight: 600; font-size: 13px; letter-spacing: .02em;
+  color: var(--text); text-align: left; direction: ltr;
+}
+a.model:hover, a.model:active { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-glow); }
+.model .tag { font-size: 10px; color: var(--blue-2); font-family: var(--font-ar); white-space: nowrap; }
+.model .brandtag { font-size: 10px; color: var(--muted); font-family: var(--font-ar); }
+
+.empty-state { text-align: center; color: var(--muted); padding: 46px 12px; border: 1.5px dashed var(--line); border-radius: var(--radius); margin-top: 18px; line-height: 1.9; }
+.hint { color: var(--muted); font-size: 12.5px; text-align: center; margin-top: 18px; }
+
+footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 44px; }
+footer b { font-family: var(--font-en); letter-spacing: .14em; color: var(--blue-2); }

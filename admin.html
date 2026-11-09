@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#05070b">
+<title>TITAN — لوحة التحكم</title>
+<link rel="manifest" href="admin.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+<style>
+  .wrap { max-width: 920px; }
+  .ahead { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 22px 0 8px; flex-wrap: wrap; }
+  .ahead .wordmark { font-size: 30px; letter-spacing: .14em; }
+  .ahead small { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; letter-spacing: 0; }
+  .btn { background: var(--card); border: 1.5px solid var(--line); color: var(--text); padding: 10px 16px; border-radius: 11px; font-size: 14px; font-weight: 600; }
+  .btn:hover { border-color: var(--blue); }
+  .btn.primary { background: var(--blue); border-color: var(--blue); box-shadow: 0 0 18px var(--blue-glow); }
+  .btn.danger { color: #ff6b7a; }
+  .btn.danger:hover { border-color: #ff6b7a; }
+  .btn.sm { padding: 6px 12px; font-size: 12.5px; border-radius: 9px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .status { font-size: 12.5px; padding: 6px 12px; border-radius: 999px; border: 1.5px solid var(--line); color: var(--muted); }
+  .status.dirty { color: #ffd479; border-color: #5a4a1d; background: #1b1608; }
+  .tabs { display: flex; gap: 8px; margin: 18px 0 14px; }
+  .tab { background: none; border: none; color: var(--muted); font-size: 15px; font-weight: 700; padding: 10px 6px; border-bottom: 2.5px solid transparent; }
+  .tab.on { color: var(--text); border-color: var(--blue); }
+  .panel { background: var(--bg-2); border: 1.5px solid var(--line); border-radius: var(--radius); padding: 16px; }
+  .fld { display: block; margin-bottom: 14px; }
+  .fld span { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  input.t, textarea.t {
+    width: 100%; background: var(--card); border: 1.5px solid var(--line); color: var(--text);
+    font-family: var(--font-ar); font-size: 15px; padding: 11px 13px; border-radius: 11px; outline: none;
+  }
+  input.t:focus, textarea.t:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-glow); }
+  .ltr { direction: ltr; text-align: left; }
+  .note { color: var(--muted); font-size: 12.5px; line-height: 1.8; margin: 6px 0 0; }
+  .brandbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .series { border: 1.5px solid var(--line); border-radius: 12px; padding: 12px; margin-top: 12px; background: var(--card); }
+  .series-top { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .series-top input { font-family: var(--font-en); font-weight: 700; letter-spacing: .06em; direction: ltr; text-align: left; }
+  .tags { display: flex; flex-wrap: wrap; gap: 7px; direction: ltr; margin-bottom: 10px; }
+  .tagm { display: inline-flex; align-items: center; gap: 6px; background: var(--bg); border: 1.5px solid var(--line); border-radius: 9px; padding: 5px 6px 5px 11px; font-family: var(--font-en); font-weight: 600; font-size: 12px; }
+  .tagm button { background: none; border: none; color: var(--muted); font-size: 16px; line-height: 1; padding: 0 4px; }
+  .tagm button:hover { color: #ff6b7a; }
+  .tagm .ed { cursor: text; }
+  .add-row { display: flex; gap: 8px; }
+  .add-row input { direction: ltr; text-align: left; }
+  .filter { margin-bottom: 12px; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--blue); color: #fff; padding: 11px 20px; border-radius: 12px; font-weight: 700; box-shadow: 0 8px 30px rgba(0,0,0,.5); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 9; }
+  .toast.show { opacity: 1; }
+  .help { margin-top: 22px; }
+  .help ol { margin: 8px 0 0; padding-right: 20px; line-height: 2; color: var(--muted); font-size: 13.5px; }
+  .help b { color: var(--text); }
+  dialog { background: var(--bg-2); color: var(--text); border: 1.5px solid var(--blue); border-radius: var(--radius); width: min(520px, 92vw); padding: 18px; }
+  dialog::backdrop { background: rgba(0,0,0,.7); }
+  dialog textarea { min-height: 220px; direction: ltr; text-align: left; font-family: var(--font-en); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="ahead">
+    <div>
+      <h1 class="wordmark">TITAN</h1>
+      <small>لوحة التحكم بالمنتجات</small>
+    </div>
+    <div class="row">
+      <span class="status" id="status">محفوظ</span>
+      <a class="btn" href="qr.html" target="_blank">طباعة QR</a>
+      <a class="btn" href="index.html" target="_blank">معاينة الموقع</a>
+      <button class="btn" id="btnInstall" hidden>تثبيت التطبيق</button>
+      <button class="btn" id="btnImport">استيراد</button>
+      <button class="btn primary" id="btnExport">تنزيل data.js ⬇</button>
+    </div>
+  </div>
+  <input type="file" id="file" accept=".js,.json" hidden>
+
+  <div class="tabs">
+    <button class="tab on" data-tab="models">الماركات والموديلات</button>
+    <button class="tab" data-tab="shop">بيانات المحل</button>
+  </div>
+
+  <div id="tab-models">
+    <div class="panel">
+      <div class="brandbar" id="brandbar"></div>
+      <div id="brandEditor"></div>
+    </div>
+  </div>
+
+  <div id="tab-shop" hidden>
+    <div class="panel">
+      <label class="fld"><span>اسم المحل (يظهر تحت شعار TITAN)</span><input class="t" id="s_name"></label>
+      <label class="fld"><span>الوصف القصير</span><input class="t" id="s_tag"></label>
+      <label class="fld"><span>رقم واتساب مع رمز الدولة (اختياري — مثال: 963912345678)</span><input class="t ltr" id="s_wa" inputmode="tel"></label>
+      <p class="note" style="margin-top:-6px">إن أدخلت الرقم يظهر زر «اطلب» بجانب كل موديل ويفتح محادثة جاهزة معك.</p>
+      <label class="fld" style="margin-top:14px"><span>رابط الموقع بعد رفعه (يُستخدم في رمز QR)</span><input class="t ltr" id="s_url" placeholder="https://titan-shop.netlify.app" inputmode="url"></label>
+    </div>
+  </div>
+
+  <div class="panel help">
+    <b>طريقة تحديث الموقع بعد التعديل</b>
+    <ol>
+      <li>عدّل الموديلات من هذه الصفحة (يُحفظ مسودة تلقائياً على هذا الجهاز).</li>
+      <li>اضغط <b>تنزيل data.js</b>.</li>
+      <li>استبدل ملف <b>data.js</b> القديم داخل مجلد الموقع بالملف الجديد وأعد رفع المجلد على الاستضافة.</li>
+    </ol>
+  </div>
+</div>
+
+<dialog id="bulk">
+  <p style="margin:0 0 10px;font-weight:700">إضافة عدة موديلات دفعة واحدة</p>
+  <p class="note" style="margin:0 0 10px">الصق الموديلات، كل موديل في سطر. المكرر يُتجاهل.</p>
+  <textarea class="t" id="bulkText" placeholder="Hot 9&#10;Hot 10 lite&#10;Hot 11s"></textarea>
+  <div class="row" style="margin-top:12px;justify-content:flex-end">
+    <button class="btn" id="bulkCancel">إلغاء</button>
+    <button class="btn primary" id="bulkOk">إضافة</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script src="data.js"></script>
+<script>
+(function () {
+  var KEY = 'titan_admin_draft_v1';
+  var data, curBrand = 0, dirty = false, bulkTarget = null;
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function toast(t) { var el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('show'); }, 2200); }
+
+  /* ---------- تحميل (المسودة أولاً ثم data.js) ---------- */
+  var base = clone(window.TITAN_DATA || { shop: {}, brands: [] });
+  try {
+    var saved = localStorage.getItem(KEY);
+    if (saved) { data = JSON.parse(saved); dirty = true; } else { data = base; }
+  } catch (e) { data = base; }
+  data.shop = data.shop || {}; data.brands = data.brands || [];
+
+  function markDirty() {
+    dirty = true;
+    try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {}
+    updStatus();
+  }
+  function updStatus() {
+    var s = $('status');
+    s.textContent = dirty ? 'تعديلات لم تُنزَّل بعد' : 'محفوظ';
+    s.className = 'status' + (dirty ? ' dirty' : '');
+  }
+
+  function slug(name) {
+    var s = String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    if (!s) s = 'b' + Date.now().toString(36);
+    var id = s, n = 2;
+    while (data.brands.some(function (b) { return b.id === id; })) id = s + '-' + n++;
+    return id;
+  }
+
+  /* ---------- رسم الماركات ---------- */
+  function renderBrandbar() {
+    var h = '';
+    data.brands.forEach(function (b, i) {
+      var n = (b.series || []).reduce(function (a, s) { return a + (s.models || []).length; }, 0);
+      h += '<button class="chip' + (i === curBrand ? ' on' : '') + '" data-b="' + i + '">' + esc(b.name) + ' <small>(' + n + ')</small></button>';
+    });
+    h += '<button class="btn sm" id="addBrand">+ ماركة جديدة</button>';
+    $('brandbar').innerHTML = h;
+  }
+
+  function renderEditor() {
+    var b = data.brands[curBrand];
+    var box = $('brandEditor');
+    if (!b) { box.innerHTML = '<p class="note">لا توجد ماركات. أضف ماركة جديدة.</p>'; return; }
+    var h = '<div class="row" style="margin-bottom:6px">' +
+      '<input class="t ltr" id="brandName" style="flex:1;font-family:var(--font-en);font-weight:700" value="' + esc(b.name) + '">' +
+      '<button class="btn sm danger" id="delBrand">حذف الماركة</button></div>';
+    h += '<input class="t filter ltr" id="flt" placeholder="بحث داخل موديلات هذه الماركة..." style="margin-top:10px">';
+
+    (b.series || []).forEach(function (s, si) {
+      h += '<div class="series" data-s="' + si + '">' +
+        '<div class="series-top"><input class="t sname" value="' + esc(s.name) + '" placeholder="اسم السلسلة (مثال: HOT)">' +
+        '<button class="btn sm danger delSeries">حذف</button></div>' +
+        '<div class="tags">';
+      (s.models || []).forEach(function (m, mi) {
+        h += '<span class="tagm" data-m="' + mi + '"><span class="ed" title="اضغط للتعديل">' + esc(m) + '</span><button class="delModel" title="حذف">×</button></span>';
+      });
+      h += '</div><div class="add-row"><input class="t newModel" placeholder="اكتب موديل واضغط Enter"><button class="btn sm addModel">إضافة</button>' +
+        '<button class="btn sm bulkBtn">عدة موديلات</button></div></div>';
+    });
+    h += '<button class="btn" id="addSeries" style="margin-top:14px">+ سلسلة جديدة (مثل HOT / SMART)</button>';
+    if (!(b.series || []).length) h += '<p class="note">هذه الماركة فارغة. أضف سلسلة ثم أضف الموديلات، وتظهر للزبون تلقائياً.</p>';
+    box.innerHTML = h;
+  }
+
+  function render() { renderBrandbar(); renderEditor(); }
+
+  /* ---------- أحداث الماركات والموديلات ---------- */
+  function seriesOf(el) { var s = el.closest('.series'); return data.brands[curBrand].series[parseInt(s.getAttribute('data-s'), 10)]; }
+
+  function addModels(series, list) {
+    var added = 0;
+    list.forEach(function (m) {
+      m = m.trim().replace(/\s+/g, ' ');
+      if (!m) return;
+      var exists = series.models.some(function (x) { return x.toLowerCase() === m.toLowerCase(); });
+      if (!exists) { series.models.push(m); added++; }
+    });
+    return added;
+  }
+
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    var chip = t.closest('.chip');
+    if (chip && chip.hasAttribute('data-b')) { curBrand = parseInt(chip.getAttribute('data-b'), 10); render(); return; }
+
+    if (t.id === 'addBrand') {
+      var name = prompt('اسم الماركة الجديدة (مثال: Oppo)');
+      if (name && name.trim()) { data.brands.push({ id: slug(name), name: name.trim(), series: [] }); curBrand = data.brands.length - 1; markDirty(); render(); }
+      return;
+    }
+    if (t.id === 'delBrand') {
+      var b = data.brands[curBrand];
+      if (confirm('حذف الماركة «' + b.name + '» وكل موديلاتها؟')) { data.brands.splice(curBrand, 1); curBrand = 0; markDirty(); render(); }
+      return;
+    }
+    if (t.id === 'addSeries') {
+      var nm = prompt('اسم السلسلة (مثال: HOT)');
+      if (nm && nm.trim()) { var br = data.brands[curBrand]; br.series = br.series || []; br.series.push({ name: nm.trim(), models: [] }); markDirty(); render(); }
+      return;
+    }
+    if (t.classList.contains('delSeries')) {
+      var s = seriesOf(t);
+      if (confirm('حذف السلسلة «' + s.name + '» وكل موديلاتها؟')) { var arr = data.brands[curBrand].series; arr.splice(arr.indexOf(s), 1); markDirty(); render(); }
+      return;
+    }
+    if (t.classList.contains('delModel')) {
+      var tag = t.closest('.tagm'); var ser = seriesOf(t);
+      ser.models.splice(parseInt(tag.getAttribute('data-m'), 10), 1); markDirty(); render(); return;
+    }
+    if (t.classList.contains('ed')) {
+      var tg = t.closest('.tagm'); var se = seriesOf(t); var idx = parseInt(tg.getAttribute('data-m'), 10);
+      var nv = prompt('تعديل اسم الموديل', se.models[idx]);
+      if (nv !== null && nv.trim()) { se.models[idx] = nv.trim(); markDirty(); render(); }
+      return;
+    }
+    if (t.classList.contains('addModel')) {
+      var inp = t.closest('.series').querySelector('.newModel'); var sr = seriesOf(t);
+      if (addModels(sr, [inp.value])) { markDirty(); render(); } else if (inp.value.trim()) toast('الموديل موجود مسبقاً');
+      return;
+    }
+    if (t.classList.contains('bulkBtn')) {
+      bulkTarget = seriesOf(t); $('bulkText').value = ''; $('bulk').showModal(); return;
+    }
+    if (t.classList.contains('tab')) {
+      Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (x) { x.classList.toggle('on', x === t); });
+      $('tab-models').hidden = t.getAttribute('data-tab') !== 'models';
+      $('tab-shop').hidden = t.getAttribute('data-tab') !== 'shop';
+      return;
+    }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && e.target.classList.contains('newModel')) {
+      e.preventDefault();
+      var sr = seriesOf(e.target);
+      if (addModels(sr, [e.target.value])) {
+        markDirty(); var idx = Array.prototype.indexOf.call(document.querySelectorAll('.newModel'), e.target);
+        render(); var inputs = document.querySelectorAll('.newModel'); if (inputs[idx]) inputs[idx].focus();
+      } else if (e.target.value.trim()) toast('الموديل موجود مسبقاً');
+    }
+  });
+
+  document.addEventListener('input', function (e) {
+    var t = e.target;
+    if (t.id === 'brandName') { data.brands[curBrand].name = t.value; markDirty(); renderBrandbar(); }
+    else if (t.classList.contains('sname')) { seriesOf(t).name = t.value; markDirty(); }
+    else if (t.id === 'flt') {
+      var q = t.value.toLowerCase().replace(/[\s\-]+/g, '');
+      Array.prototype.forEach.call(document.querySelectorAll('.tagm'), function (el) {
+        var txt = el.querySelector('.ed').textContent.toLowerCase().replace(/[\s\-]+/g, '');
+        el.style.display = !q || txt.indexOf(q) !== -1 ? '' : 'none';
+      });
+    }
+    else if (t.id === 's_name') { data.shop.name = t.value; markDirty(); }
+    else if (t.id === 's_tag') { data.shop.tagline = t.value; markDirty(); }
+    else if (t.id === 's_wa') { data.shop.whatsapp = t.value.replace(/[^\d]/g, ''); markDirty(); }
+    else if (t.id === 's_url') { data.shop.siteUrl = t.value.trim(); markDirty(); }
+  });
+
+  /* ---------- إضافة جماعية ---------- */
+  $('bulkCancel').onclick = function () { $('bulk').close(); };
+  $('bulkOk').onclick = function () {
+    var n = addModels(bulkTarget, $('bulkText').value.split(/\r?\n/));
+    $('bulk').close();
+    if (n) { markDirty(); render(); toast('تمت إضافة ' + n + ' موديل'); } else toast('لا موديلات جديدة');
+  };
+
+  /* ---------- تصدير / استيراد ---------- */
+  $('btnExport').onclick = function () {
+    var txt = '/* بيانات الموقع — تم إنشاؤه من لوحة التحكم */\nwindow.TITAN_DATA = ' + JSON.stringify(data, null, 2) + ';\n';
+    var blob = new Blob([txt], { type: 'application/javascript' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'data.js';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    dirty = false; try { localStorage.removeItem(KEY); } catch (e) {} updStatus();
+    toast('تم تنزيل data.js — استبدله في مجلد الموقع');
+  };
+  $('btnImport').onclick = function () { $('file').click(); };
+  $('file').onchange = function () {
+    var f = this.files[0]; if (!f) return;
+    var r = new FileReader();
+    r.onload = function () {
+      try {
+        var s = String(r.result); var a = s.indexOf('{'); var b = s.lastIndexOf('}');
+        var obj = JSON.parse(s.slice(a, b + 1));
+        if (!obj.brands) throw new Error('bad');
+        if (!confirm('استبدال البيانات الحالية بالملف المستورد؟')) return;
+        data = obj; data.shop = data.shop || {}; curBrand = 0; markDirty(); fillShop(); render(); toast('تم الاستيراد');
+      } catch (err) { alert('الملف غير صالح'); }
+    };
+    r.readAsText(f); this.value = '';
+  };
+
+  window.addEventListener('beforeunload', function (e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+  function fillShop() {
+    $('s_name').value = data.shop.name || '';
+    $('s_tag').value = data.shop.tagline || '';
+    $('s_wa').value = data.shop.whatsapp || '';
+    $('s_url').value = data.shop.siteUrl || '';
+  }
+  /* ---------- تثبيت كتطبيق ---------- */
+  var deferred = null;
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; $('btnInstall').hidden = false; });
+  $('btnInstall').onclick = function () { if (deferred) { deferred.prompt(); deferred = null; $('btnInstall').hidden = true; } };
+  window.addEventListener('appinstalled', function () { $('btnInstall').hidden = true; toast('تم تثبيت التطبيق'); });
+  try { if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js'); } catch (e) {}
+
+  fillShop(); updStatus(); render();
+})();
+</script>
+</body>
+</html>
