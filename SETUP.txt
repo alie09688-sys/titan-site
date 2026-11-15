@@ -1,0 +1,52 @@
+TITAN — دليل الإعداد (مرة واحدة منك أنت كبائع)
+================================================
+
+بعد هذا الإعداد، كل عميل يشتري التطبيق يفعل فقط:
+  1) يثبّت التطبيق  2) ينشئ حساباً (بريد وكلمة سر)  3) يكتب اسم محله
+  4) يضغط "إضافة" لإضافة الموديلات ثم "حفظ"  5) يطبع رمز QR
+ولا يحتاج GitHub ولا أي ملفات.
+
+أولاً: إنشاء قاعدة البيانات في Firebase (مجانية)
+--------------------------------------------------
+1) افتح  console.firebase.google.com  وسجّل بحساب Google.
+2) Create a project  (أو Add project) واكتب اسماً مثل titan-shops.
+   عطّل Google Analytics ثم Create project.
+3) من القائمة: Build ثم Authentication ثم Get started.
+   في Sign-in method اختر Email/Password وفعّله (Enable) ثم Save.
+4) من القائمة: Build ثم Firestore Database ثم Create database.
+   اختر أقرب موقع (مثل eur3 أو europe-west)، واختر Production mode ثم Enable.
+5) في Firestore افتح تبويب Rules، وامسح المكتوب، والصق محتوى الملف
+   firestore.rules الموجود في هذا المجلد، ثم اضغط Publish.
+6) اضغط أيقونة الترس بجانب Project Overview ثم Project settings.
+   في الأسفل قسم Your apps اختر أيقونة الويب  </>  وسمّه titan ثم Register app.
+   (لا تفعّل Firebase Hosting.)
+   سيظهر لك كود فيه apiKey و projectId. انسخ هاتين القيمتين فقط.
+   هما ليستا سرّاً، ويُسمح بوضعهما في الموقع.
+
+ثانياً: ضع القيمتين في الموقع
+------------------------------
+في Termux (استبدل القيمتين بقيمك):
+
+cat > ~/titan-site/config.js <<'EOF'
+window.TITAN_CFG = {
+  apiKey: "ضع_apiKey_هنا",
+  projectId: "ضع_projectId_هنا"
+};
+EOF
+cd ~/titan-site && git add -A && git commit -m "firebase config" && git push
+
+ثالثاً: جرّب
+-------------
+افتح  https://alie09688-sys.github.io/titan-site/app.html
+أنشئ حساباً، وأنشئ متجراً، وأضف موديلاً، واضغط حفظ، ثم افتح "معاينة المتجر".
+
+رابعاً: تحويله إلى APK
+-----------------------
+افتح  pwabuilder.com  والصق رابط app.html أعلاه، واختر Package for stores ثم Android،
+فتحصل على ملف APK. وعلى ويندوز: افتح الرابط في Edge أو Chrome واختر تثبيت التطبيق.
+
+ملاحظات
+--------
+- الحد المجاني في Firebase (خطة Spark) يكفي لعشرات المحلات. راقب الاستهلاك من Usage.
+- رابط متجر كل عميل:  .../shop.html?s=اسم_المحل  ولا يمكن تغيير الاسم بعد الطباعة.
+- أي عميل ينسى كلمة السر يضغط "نسيت كلمة السر" فيصله بريد لتغييرها.

@@ -50,7 +50,7 @@
 <body>
 <div class="wrap">
   <div class="noprint">
-    <div class="topbar"><a class="back" href="admin.html" style="display:grid;place-items:center" aria-label="رجوع">›</a>
+    <div class="topbar"><a class="back" href="app.html" style="display:grid;place-items:center" aria-label="رجوع">›</a>
       <div><h2 class="page-title" style="font-size:20px">طباعة رمز QR</h2><p class="page-sub">يمسحه الزبون ليفتح الموقع مباشرة</p></div></div>
 
     <div class="panel">
@@ -84,12 +84,13 @@
   var KEY = 'titan_qr_url';
   var url = $('url'), light = false, rows = null;
 
-  $('shop').textContent = (D.shop && D.shop.name) || '';
+  var P = new URLSearchParams(location.search);
+  $('shop').textContent = P.get('n') || (D.shop && D.shop.name) || '';
 
   var fromHost = '';
   if (/^https?:$/.test(location.protocol)) fromHost = location.href.replace(/[^\/]*$/, '') + 'index.html';
   var saved = ''; try { saved = localStorage.getItem(KEY) || ''; } catch (e) {}
-  url.value = (D.shop && D.shop.siteUrl) || saved || fromHost;
+  url.value = P.get('u') || (D.shop && D.shop.siteUrl) || saved || fromHost;
 
   function msg(t) {
     $('qrbox').innerHTML = '<div style="height:100%;display:grid;place-items:center;text-align:center;color:#05070b;font-weight:700;font-size:15px;padding:8px">' + t + '</div>';
@@ -101,6 +102,7 @@
       try { localStorage.setItem(KEY, v); } catch (e) {}
       rows = null;
       if (!v) { $('warn').hidden = true; msg('اكتب رابط الموقع في الخانة'); return; }
+      // أضف https:// تلقائياً إن نُسيت، ليفتح الرابط من كاميرا الهاتف
       if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(v)) v = 'https://' + v;
       var local = /^(https?:\/\/)?(localhost|127\.|192\.168\.|10\.)/i.test(v) || /^file:/i.test(v);
       $('warn').hidden = !local;

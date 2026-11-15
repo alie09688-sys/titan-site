@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05070b">
+<meta name="robots" content="noindex">
+<title>TITAN — إدارة المتجر</title>
+<link rel="manifest" href="app.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+<style>
+  .wrap { max-width: 720px; padding-bottom: 120px; }
+  [hidden] { display: none !important; }
+  .brandhead { text-align: center; padding: 30px 0 4px; }
+  .brandhead .wordmark { font-size: clamp(38px, 12vw, 60px); }
+  .card { background: var(--bg-2); border: 1.5px solid var(--line); border-radius: var(--radius); padding: 18px; margin-top: 18px; }
+  .card h2 { margin: 0 0 14px; font-size: 18px; }
+  .fld { display: block; margin-bottom: 14px; }
+  .fld > span { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  input.t, textarea.t, select.t { width: 100%; background: var(--card); border: 1.5px solid var(--line); color: var(--text); font-family: var(--font-ar); font-size: 16px; padding: 13px 14px; border-radius: 12px; outline: none; }
+  input.t:focus, textarea.t:focus, select.t:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-glow); }
+  textarea.t { min-height: 150px; resize: vertical; line-height: 1.8; }
+  .ltr { direction: ltr; text-align: left; }
+  .btn { background: var(--card); border: 1.5px solid var(--line); color: var(--text); padding: 12px 18px; border-radius: 12px; font-size: 15px; font-weight: 700; }
+  .btn:hover { border-color: var(--blue); }
+  .btn.primary { background: var(--blue); border-color: var(--blue); box-shadow: 0 0 18px var(--blue-glow); }
+  .btn.block { width: 100%; padding: 15px; font-size: 17px; }
+  .btn.sm { padding: 7px 12px; font-size: 13px; border-radius: 9px; }
+  .btn.danger { color: #ff6b7a; }
+  .btn:disabled { opacity: .55; }
+  .link { background: none; border: none; color: var(--blue-2); font-size: 14px; padding: 6px 0; text-decoration: underline; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .tabs2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--card); padding: 5px; border-radius: 12px; margin-bottom: 16px; }
+  .tabs2 button { background: none; border: none; color: var(--muted); padding: 11px; border-radius: 9px; font-size: 15px; font-weight: 700; }
+  .tabs2 button.on { background: var(--blue); color: #fff; }
+  .note { color: var(--muted); font-size: 12.5px; line-height: 1.8; margin: 6px 0 0; }
+  .err { color: #ff8a97; font-size: 14px; margin: 0 0 12px; min-height: 0; }
+  .preview { direction: ltr; text-align: left; font-size: 12.5px; color: var(--blue-2); word-break: break-all; margin-top: 6px; }
+  .spin { text-align: center; color: var(--muted); padding: 60px 0; }
+
+  /* الشاشة الرئيسية */
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 0 6px; }
+  .top .t1 { font-weight: 800; font-size: 19px; }
+  .top .t2 { font-family: var(--font-en); letter-spacing: .14em; color: var(--blue-2); font-size: 12px; font-weight: 800; }
+  .pill { font-size: 12.5px; padding: 6px 12px; border-radius: 999px; border: 1.5px solid var(--line); color: var(--muted); white-space: nowrap; }
+  .pill.dirty { color: #ffd479; border-color: #5a4a1d; background: #1b1608; }
+  .pill.ok { color: #6ee7a0; border-color: #1d5a37; }
+  .bh { display: flex; align-items: center; justify-content: space-between; margin: 18px 2px 4px; gap: 8px; }
+  .bh b { font-family: var(--font-en); font-size: 20px; letter-spacing: .04em; }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; direction: ltr; margin-bottom: 4px; }
+  .tagm { display: inline-flex; align-items: center; gap: 4px; background: var(--card); border: 1.5px solid var(--line); border-radius: 10px; padding: 7px 4px 7px 12px; font-family: var(--font-en); font-weight: 600; font-size: 13px; }
+  .tagm .ed { cursor: pointer; }
+  .tagm button { background: none; border: none; color: var(--muted); font-size: 18px; line-height: 1; padding: 0 7px; }
+  .tagm button:hover { color: #ff6b7a; }
+  .sh { display: flex; align-items: center; gap: 8px; margin: 16px 2px 10px; }
+  .sh b { font-family: var(--font-en); letter-spacing: .1em; color: var(--blue-2); font-size: 14px; }
+  .sh::after { content: ""; flex: 1; height: 1px; background: var(--line); order: 1; }
+  .sh .acts { order: 2; display: flex; gap: 4px; }
+  .linkbox { direction: ltr; text-align: left; background: var(--card); border: 1.5px dashed var(--line); border-radius: 12px; padding: 12px; font-size: 13px; color: var(--blue-2); word-break: break-all; user-select: all; }
+
+  .actbar { position: fixed; right: 0; left: 0; bottom: 0; background: linear-gradient(180deg, transparent, var(--bg) 35%); padding: 26px 16px calc(14px + env(safe-area-inset-bottom)); z-index: 5; }
+  .actbar .in { max-width: 720px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .actbar .btn { padding: 16px; font-size: 18px; }
+
+  dialog { background: var(--bg-2); color: var(--text); border: 1.5px solid var(--blue); border-radius: 16px; width: min(520px, 94vw); padding: 18px; max-height: 92vh; overflow: auto; }
+  dialog::backdrop { background: rgba(0, 0, 0, .75); }
+  dialog h3 { margin: 0 0 14px; }
+  .toast { position: fixed; bottom: 96px; left: 50%; transform: translateX(-50%); background: var(--blue); color: #fff; padding: 12px 20px; border-radius: 12px; font-weight: 700; box-shadow: 0 8px 30px rgba(0,0,0,.5); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 20; max-width: 92vw; text-align: center; }
+  .toast.show { opacity: 1; }
+  .toast.bad { background: #c2303f; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- لم يُضبط الاتصال -->
+  <section id="sCfg" hidden>
+    <div class="brandhead"><h1 class="wordmark">TITAN</h1></div>
+    <div class="card"><h2>الإعداد غير مكتمل</h2>
+      <p class="note">لم تُضف إعدادات قاعدة البيانات (ملف config.js). اتبع ملف SETUP.txt ثم أعد فتح التطبيق.</p></div>
+  </section>
+
+  <!-- تحميل -->
+  <section id="sLoad" hidden><div class="brandhead"><h1 class="wordmark">TITAN</h1></div><div class="spin" id="loadTxt">جاري التحميل...</div></section>
+
+  <!-- خطأ تحميل -->
+  <section id="sErr" hidden>
+    <div class="brandhead"><h1 class="wordmark">TITAN</h1></div>
+    <div class="card"><p class="err" id="errTxt"></p>
+      <div class="row"><button class="btn primary" id="errRetry">إعادة المحاولة</button><button class="btn" id="errOut">تسجيل الخروج</button></div></div>
+  </section>
+
+  <!-- تسجيل الدخول -->
+  <section id="sAuth" hidden>
+    <div class="brandhead"><h1 class="wordmark">TITAN</h1>
+      <p class="tagline">أدِر كفرات محلك وانشرها للزبائن بضغطة واحدة</p></div>
+    <div class="card">
+      <div class="tabs2"><button id="tLogin" class="on">تسجيل الدخول</button><button id="tSignup">حساب جديد</button></div>
+      <p class="err" id="authErr"></p>
+      <label class="fld"><span>البريد الإلكتروني</span><input class="t ltr" id="email" type="email" inputmode="email" autocomplete="email"></label>
+      <label class="fld"><span>كلمة السر</span><input class="t ltr" id="pass" type="password" autocomplete="current-password"></label>
+      <button class="btn primary block" id="authGo">دخول</button>
+      <div style="text-align:center;margin-top:10px"><button class="link" id="forgot">نسيت كلمة السر؟</button></div>
+    </div>
+  </section>
+
+  <!-- إنشاء المتجر -->
+  <section id="sOnb" hidden>
+    <div class="brandhead"><h1 class="wordmark">TITAN</h1></div>
+    <div class="card"><h2>أنشئ متجرك</h2>
+      <p class="err" id="onbErr"></p>
+      <label class="fld"><span>اسم المحل (يظهر للزبائن)</span><input class="t" id="oName" placeholder="مثال: محل النور للاتصالات"></label>
+      <label class="fld"><span>اسم رابط المتجر (إنجليزي)</span><input class="t ltr" id="oSlug" placeholder="alnoor" autocapitalize="none" autocomplete="off"></label>
+      <div class="preview" id="oPrev"></div>
+      <p class="note">3 إلى 30 حرفاً: إنجليزية صغيرة وأرقام وشرطة. لا يمكن تغييره لاحقاً لأن رمز QR المطبوع يعتمد عليه.</p>
+      <button class="btn primary block" id="oGo" style="margin-top:14px">إنشاء المتجر</button>
+      <div style="text-align:center;margin-top:10px"><button class="link" id="oOut">تسجيل الخروج</button></div>
+    </div>
+  </section>
+
+  <!-- الشاشة الرئيسية -->
+  <section id="sMain" hidden>
+    <div class="top">
+      <div><div class="t2">TITAN</div><div class="t1" id="mName"></div></div>
+      <div class="row"><span class="pill ok" id="pill">محفوظ ✓</span><button class="btn sm" id="btnSet">⚙ الإعدادات</button></div>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div id="content"></div>
+
+    <div class="card">
+      <h2>رابط متجرك ورمز QR</h2>
+      <div class="linkbox" id="lnk"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn sm" id="btnCopy">نسخ الرابط</button>
+        <a class="btn sm" id="btnQr" target="_blank" rel="noopener">طباعة QR</a>
+        <a class="btn sm" id="btnView" target="_blank" rel="noopener">معاينة المتجر</a>
+      </div>
+      <p class="note">اطبع رمز QR وضعه في المحل. الزبون يمسحه فيرى كفراتك مباشرة، وأي تعديل تحفظه يظهر له فوراً.</p>
+    </div>
+
+    <div class="actbar"><div class="in">
+      <button class="btn" id="btnAdd">＋ إضافة</button>
+      <button class="btn primary" id="btnSave">💾 حفظ</button>
+    </div></div>
+  </section>
+</div>
+
+<!-- نافذة الإضافة -->
+<dialog id="dAdd">
+  <h3>إضافة كفرات</h3>
+  <label class="fld"><span>الماركة</span><select class="t" id="aBrand"></select></label>
+  <label class="fld" id="aNewWrap" hidden><span>اسم الماركة الجديدة</span><input class="t ltr" id="aBrandNew" placeholder="مثال: Nokia"></label>
+  <label class="fld"><span>السلسلة (اختياري)</span><input class="t ltr" id="aSeries" list="serList" placeholder="مثال: HOT"></label>
+  <datalist id="serList"></datalist>
+  <label class="fld"><span>الموديلات (كل موديل في سطر)</span><textarea class="t ltr" id="aModels" placeholder="Hot 10&#10;Hot 10 lite&#10;Hot 11s"></textarea></label>
+  <p class="err" id="aErr"></p>
+  <div class="row" style="justify-content:flex-end"><button class="btn" id="aCancel">إلغاء</button><button class="btn primary" id="aOk">إضافة للقائمة</button></div>
+  <p class="note">بعد الإضافة اضغط زر «حفظ» حتى تظهر للزبائن.</p>
+</dialog>
+
+<!-- نافذة الإعدادات -->
+<dialog id="dSet">
+  <h3>الإعدادات</h3>
+  <label class="fld"><span>اسم المحل</span><input class="t" id="sName"></label>
+  <label class="fld"><span>وصف قصير</span><input class="t" id="sTag" placeholder="كفرات و إكسسوارات الهواتف"></label>
+  <label class="fld"><span>رقم واتساب مع رمز الدولة (اختياري)</span><input class="t ltr" id="sWa" inputmode="tel" placeholder="963912345678"></label>
+  <p class="note" style="margin-top:-8px">إن وُضع الرقم يظهر للزبون زر «اطلب» بجانب كل موديل.</p>
+  <div class="row" style="margin-top:14px"><button class="btn primary" id="sOk">تطبيق</button><button class="btn" id="sClose">إغلاق</button></div>
+  <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+  <div class="row">
+    <button class="btn sm" id="btnInstall" hidden>تثبيت التطبيق</button>
+    <button class="btn sm" id="btnImp">استيراد قائمة (متقدم)</button>
+    <button class="btn sm danger" id="btnOut">تسجيل الخروج</button>
+  </div>
+  <input type="file" id="impFile" accept=".js,.json" hidden>
+  <p class="note" id="acct"></p>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script src="cloud.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function toast(t, bad) { var el = $('toast'); el.textContent = t; el.className = 'toast show' + (bad ? ' bad' : ''); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('show'); }, bad ? 4500 : 2400); }
+
+  var Cloud = window.TitanCloud;
+  var DRAFT = 'titan_app_draft_v2';
+  var DEFAULT_BRANDS = ['Samsung', 'iPhone', 'Xiaomi', 'Huawei', 'Tecno', 'Infinix', 'Oppo', 'Realme', 'Honor'];
+  var S = { slug: '', shop: { name: '', tagline: '', whatsapp: '' }, brands: [], dirty: false, cur: 0 };
+  var BASE = location.origin + location.pathname.replace(/[^\/]*$/, '');
+
+  function shopUrl() { return BASE + 'shop.html?s=' + S.slug; }
+  function idOf(name) { var s = String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); return s || 'b' + Date.now().toString(36); }
+  function uniqueId(name) { var id = idOf(name), n = 2, base = id; while (S.brands.some(function (b) { return b.id === id; })) id = base + '-' + n++; return id; }
+
+  var SCREENS = ['sCfg', 'sLoad', 'sErr', 'sAuth', 'sOnb', 'sMain'];
+  function show(id) { SCREENS.forEach(function (s) { $(s).hidden = s !== id; }); window.scrollTo(0, 0); }
+
+  /* ---------- مسودة محلية حتى لا يضيع شيء ---------- */
+  function saveDraft() { try { localStorage.setItem(DRAFT, JSON.stringify({ slug: S.slug, dirty: S.dirty, shop: S.shop, brands: S.brands })); } catch (e) {} }
+  function loadDraft(slug) { try { var d = JSON.parse(localStorage.getItem(DRAFT) || 'null'); return d && d.slug === slug && d.dirty ? d : null; } catch (e) { return null; } }
+  function clearDraft() { try { localStorage.removeItem(DRAFT); } catch (e) {} }
+  function markDirty() { S.dirty = true; saveDraft(); pill(); }
+  function pill() { var p = $('pill'); p.textContent = S.dirty ? 'تعديلات لم تُحفظ' : 'محفوظ ✓'; p.className = 'pill ' + (S.dirty ? 'dirty' : 'ok'); }
+
+  /* ---------- الدخول والحساب ---------- */
+  var mode = 'login';
+  function setMode(m) {
+    mode = m; $('tLogin').className = m === 'login' ? 'on' : ''; $('tSignup').className = m === 'signup' ? 'on' : '';
+    $('authGo').textContent = m === 'login' ? 'دخول' : 'إنشاء حساب';
+    $('pass').autocomplete = m === 'login' ? 'current-password' : 'new-password';
+    $('forgot').hidden = m !== 'login'; $('authErr').textContent = '';
+  }
+  $('tLogin').onclick = function () { setMode('login'); };
+  $('tSignup').onclick = function () { setMode('signup'); };
+
+  function authGo() {
+    var email = $('email').value.trim(), pass = $('pass').value;
+    $('authErr').textContent = '';
+    if (!email || !pass) { $('authErr').textContent = 'اكتب البريد وكلمة السر.'; return; }
+    var b = $('authGo'); b.disabled = true;
+    (mode === 'login' ? Cloud.signIn(email, pass) : Cloud.signUp(email, pass))
+      .then(function () { b.disabled = false; loadAccount(); })
+      .catch(function (e) { b.disabled = false; $('authErr').textContent = e.message; });
+  }
+  $('authGo').onclick = authGo;
+  $('pass').addEventListener('keydown', function (e) { if (e.key === 'Enter') authGo(); });
+  $('forgot').onclick = function () {
+    var email = $('email').value.trim();
+    if (!email) { $('authErr').textContent = 'اكتب بريدك أولاً ثم اضغط «نسيت كلمة السر».'; return; }
+    Cloud.resetPassword(email).then(function () { toast('أرسلنا رابط تغيير كلمة السر إلى بريدك'); }).catch(function (e) { $('authErr').textContent = e.message; });
+  };
+
+  function logout() { Cloud.signOut(); clearDraft(); S = { slug: '', shop: { name: '', tagline: '', whatsapp: '' }, brands: [], dirty: false, cur: 0 }; try { $('dSet').close(); } catch (e) {} setMode('login'); show('sAuth'); }
+  $('errOut').onclick = logout; $('oOut').onclick = logout; $('btnOut').onclick = logout;
+
+  function fail(e) {
+    if (e.code === 'SESSION') { logout(); return; }
+    $('errTxt').textContent = e.message; show('sErr');
+  }
+  $('errRetry').onclick = function () { loadAccount(); };
+
+  function loadAccount() {
+    var ses = Cloud.session();
+    if (!ses) { show('sAuth'); return; }
+    $('loadTxt').textContent = 'جاري التحميل...'; show('sLoad');
+    Cloud.getMine('users/' + ses.uid).then(function (u) {
+      if (!u.slug) { startOnboarding(); return; }
+      loadShop(u.slug);
+    }).catch(function (e) { if (e.code === 'NOT_FOUND') startOnboarding(); else fail(e); });
+  }
+
+  function loadShop(slug) {
+    Cloud.getPublic('shops/' + slug).then(function (o) {
+      var data = {}; try { data = JSON.parse(o.data || '{}'); } catch (e) {}
+      S.slug = slug; S.shop = { name: o.name || '', tagline: o.tagline || '', whatsapp: o.whatsapp || '' }; S.brands = data.brands || []; S.dirty = false; S.cur = 0;
+      var d = loadDraft(slug);
+      if (d) { S.shop = d.shop; S.brands = d.brands; S.dirty = true; }
+      renderAll(); show('sMain');
+    }).catch(function (e) { if (e.code === 'NOT_FOUND') startOnboarding(); else fail(e); });
+  }
+
+  /* ---------- إنشاء المتجر ---------- */
+  var slugTouched = false;
+  function startOnboarding() { $('onbErr').textContent = ''; show('sOnb'); updPrev(); }
+  function autoSlug(name) { var s = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); return s.length >= 3 ? s.slice(0, 30) : ''; }
+  function updPrev() { var v = $('oSlug').value.trim(); $('oPrev').textContent = v ? BASE + 'shop.html?s=' + v : ''; }
+  $('oName').addEventListener('input', function () { if (!slugTouched) { $('oSlug').value = autoSlug($('oName').value); updPrev(); } });
+  $('oSlug').addEventListener('input', function () { slugTouched = true; $('oSlug').value = $('oSlug').value.toLowerCase().replace(/[^a-z0-9-]/g, ''); updPrev(); });
+
+  $('oGo').onclick = function () {
+    var name = $('oName').value.trim(), slug = $('oSlug').value.trim(), ses = Cloud.session();
+    $('onbErr').textContent = '';
+    if (!name) { $('onbErr').textContent = 'اكتب اسم المحل.'; return; }
+    if (!/^[a-z0-9-]{3,30}$/.test(slug)) { $('onbErr').textContent = 'اسم الرابط: 3 إلى 30 حرفاً إنجليزية صغيرة وأرقاماً وشرطة.'; return; }
+    if (!ses) { logout(); return; }
+    var b = $('oGo'); b.disabled = true;
+    var payload = { owner: ses.uid, name: name, tagline: 'كفرات و إكسسوارات الهواتف', whatsapp: '', data: JSON.stringify({ brands: DEFAULT_BRANDS.map(function (n) { return { id: idOf(n), name: n, series: [] }; }) }), updated: new Date().toISOString() };
+    Cloud.createDoc('shops', slug, payload)
+      .catch(function (e) {
+        if (e.code !== 'TAKEN') throw e;
+        // ربما أنشأه هذا المستخدم نفسه سابقاً
+        return Cloud.getPublic('shops/' + slug).then(function (o) { if (o.owner !== ses.uid) throw e; });
+      })
+      .then(function () { return Cloud.patchDoc('users/' + ses.uid, { slug: slug }); })
+      .then(function () { b.disabled = false; clearDraft(); loadShop(slug); })
+      .catch(function (e) { b.disabled = false; $('onbErr').textContent = e.message; });
+  };
+
+  /* ---------- العرض ---------- */
+  function totalOf(b) { return (b.series || []).reduce(function (n, s) { return n + (s.models || []).length; }, 0); }
+
+  function renderAll() {
+    $('mName').textContent = S.shop.name || 'متجري';
+    var u = shopUrl(); $('lnk').textContent = u;
+    $('btnView').href = u; $('btnQr').href = 'qr.html?u=' + encodeURIComponent(u) + '&n=' + encodeURIComponent(S.shop.name || '');
+    pill(); renderChips(); renderBrand();
+  }
+  function renderChips() {
+    var h = '';
+    S.brands.forEach(function (b, i) { h += '<button class="chip' + (i === S.cur ? ' on' : '') + '" data-b="' + i + '">' + esc(b.name) + ' (' + totalOf(b) + ')</button>'; });
+    $('chips').innerHTML = h || '<span class="note">لا توجد ماركات. اضغط «إضافة».</span>';
+  }
+  function renderBrand() {
+    var b = S.brands[S.cur], h = '';
+    if (!b) { $('content').innerHTML = '<div class="empty-state">أضف أول كفراتك بزر «＋ إضافة» في الأسفل.</div>'; return; }
+    h += '<div class="bh"><b>' + esc(b.name) + '</b><button class="btn sm danger" data-act="delbrand">حذف الماركة</button></div>';
+    if (!(b.series || []).length) h += '<div class="empty-state" style="padding:28px 12px">لا توجد موديلات لهذه الماركة.<br>اضغط «＋ إضافة».</div>';
+    (b.series || []).forEach(function (s, si) {
+      h += '<div class="sh"><b>' + esc(s.name || 'بدون سلسلة') + '</b><span class="acts"><button class="btn sm" data-act="rensr" data-s="' + si + '">تسمية</button><button class="btn sm danger" data-act="delsr" data-s="' + si + '">حذف</button></span></div><div class="tags">';
+      (s.models || []).forEach(function (m, mi) {
+        h += '<span class="tagm"><span class="ed" data-act="edm" data-s="' + si + '" data-m="' + mi + '">' + esc(m) + '</span><button data-act="delm" data-s="' + si + '" data-m="' + mi + '" aria-label="حذف">×</button></span>';
+      });
+      h += '</div>';
+    });
+    $('content').innerHTML = h;
+  }
+
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    var chip = t.closest && t.closest('.chip');
+    if (chip && chip.hasAttribute('data-b')) { S.cur = parseInt(chip.getAttribute('data-b'), 10); renderChips(); renderBrand(); return; }
+    var a = t.getAttribute && t.getAttribute('data-act'); if (!a) return;
+    var b = S.brands[S.cur]; if (!b) return;
+    var si = parseInt(t.getAttribute('data-s'), 10), mi = parseInt(t.getAttribute('data-m'), 10);
+    if (a === 'delm') { b.series[si].models.splice(mi, 1); markDirty(); renderAll(); }
+    else if (a === 'edm') { var nv = prompt('تعديل اسم الموديل', b.series[si].models[mi]); if (nv && nv.trim()) { b.series[si].models[mi] = nv.trim(); markDirty(); renderAll(); } }
+    else if (a === 'delsr') { if (confirm('حذف السلسلة وكل موديلاتها؟')) { b.series.splice(si, 1); markDirty(); renderAll(); } }
+    else if (a === 'rensr') { var n = prompt('اسم السلسلة', b.series[si].name); if (n !== null) { b.series[si].name = n.trim(); markDirty(); renderAll(); } }
+    else if (a === 'delbrand') { if (confirm('حذف الماركة «' + b.name + '» وكل موديلاتها؟')) { S.brands.splice(S.cur, 1); S.cur = 0; markDirty(); renderAll(); } }
+  });
+
+  /* ---------- الإضافة ---------- */
+  function fillAddBrands() {
+    var h = ''; S.brands.forEach(function (b, i) { h += '<option value="' + i + '"' + (i === S.cur ? ' selected' : '') + '>' + esc(b.name) + '</option>'; });
+    h += '<option value="__new">＋ ماركة جديدة...</option>';
+    $('aBrand').innerHTML = h; brandChanged();
+  }
+  function brandChanged() {
+    var v = $('aBrand').value, isNew = v === '__new';
+    $('aNewWrap').hidden = !isNew;
+    var b = S.brands[parseInt(v, 10)], h = '';
+    if (b) (b.series || []).forEach(function (s) { if (s.name) h += '<option value="' + esc(s.name) + '">'; });
+    $('serList').innerHTML = h;
+  }
+  $('aBrand').onchange = brandChanged;
+  $('btnAdd').onclick = function () { $('aErr').textContent = ''; $('aModels').value = ''; $('aSeries').value = ''; $('aBrandNew').value = ''; fillAddBrands(); $('dAdd').showModal(); };
+  $('aCancel').onclick = function () { $('dAdd').close(); };
+  $('aOk').onclick = function () {
+    var list = $('aModels').value.split(/[\n,،;]+/).map(function (x) { return x.trim().replace(/\s+/g, ' '); }).filter(Boolean);
+    if (!list.length) { $('aErr').textContent = 'اكتب موديلاً واحداً على الأقل.'; return; }
+    var v = $('aBrand').value, brand;
+    if (v === '__new') {
+      var nm = $('aBrandNew').value.trim();
+      if (!nm) { $('aErr').textContent = 'اكتب اسم الماركة الجديدة.'; return; }
+      brand = S.brands.filter(function (b) { return b.name.toLowerCase() === nm.toLowerCase(); })[0];
+      if (!brand) { brand = { id: uniqueId(nm), name: nm, series: [] }; S.brands.push(brand); }
+    } else brand = S.brands[parseInt(v, 10)];
+    var sn = $('aSeries').value.trim();
+    brand.series = brand.series || [];
+    var ser = brand.series.filter(function (s) { return (s.name || '').toLowerCase() === sn.toLowerCase(); })[0];
+    if (!ser) { ser = { name: sn, models: [] }; brand.series.push(ser); }
+    var added = 0;
+    list.forEach(function (m) { if (!ser.models.some(function (x) { return x.toLowerCase() === m.toLowerCase(); })) { ser.models.push(m); added++; } });
+    S.cur = S.brands.indexOf(brand);
+    $('dAdd').close();
+    if (added) { markDirty(); renderAll(); toast('تمت إضافة ' + added + ' موديل — اضغط «حفظ»'); } else toast('كل هذه الموديلات موجودة مسبقاً', true);
+  };
+
+  /* ---------- الحفظ ---------- */
+  $('btnSave').onclick = function () {
+    if (!S.slug) return;
+    var b = $('btnSave'), old = b.textContent; b.disabled = true; b.textContent = 'جاري الحفظ...';
+    Cloud.patchDoc('shops/' + S.slug, {
+      name: S.shop.name, tagline: S.shop.tagline, whatsapp: S.shop.whatsapp,
+      data: JSON.stringify({ brands: S.brands }), updated: new Date().toISOString()
+    }).then(function () {
+      b.disabled = false; b.textContent = old; S.dirty = false; clearDraft(); pill(); toast('تم الحفظ ✓ — ظهرت التعديلات في متجرك');
+    }).catch(function (e) {
+      b.disabled = false; b.textContent = old;
+      if (e.code === 'SESSION') { toast('انتهت الجلسة. تعديلاتك محفوظة على الجهاز، سجّل الدخول واضغط حفظ.', true); setTimeout(logout, 1800); saveDraft(); return; }
+      toast(e.message, true);
+    });
+  };
+
+  /* ---------- الإعدادات ---------- */
+  $('btnSet').onclick = function () {
+    $('sName').value = S.shop.name; $('sTag').value = S.shop.tagline; $('sWa').value = S.shop.whatsapp;
+    var ses = Cloud.session(); $('acct').textContent = ses ? 'الحساب: ' + ses.email : '';
+    $('dSet').showModal();
+  };
+  $('sClose').onclick = function () { $('dSet').close(); };
+  $('sOk').onclick = function () {
+    S.shop.name = $('sName').value.trim() || S.shop.name; S.shop.tagline = $('sTag').value.trim(); S.shop.whatsapp = $('sWa').value.replace(/[^\d]/g, '');
+    markDirty(); renderAll(); $('dSet').close(); toast('تم — اضغط «حفظ» لنشر التغيير');
+  };
+  $('btnImp').onclick = function () { $('impFile').click(); };
+  $('impFile').onchange = function () {
+    var f = this.files[0]; if (!f) return; var input = this;
+    var r = new FileReader();
+    r.onload = function () {
+      try {
+        var s = String(r.result), obj = JSON.parse(s.slice(s.indexOf('{'), s.lastIndexOf('}') + 1));
+        if (!obj.brands) throw new Error('bad');
+        if (!confirm('استبدال قائمة الماركات الحالية بالملف؟')) return;
+        S.brands = obj.brands; S.cur = 0;
+        if (obj.shop) { if (obj.shop.tagline) S.shop.tagline = obj.shop.tagline; if (obj.shop.whatsapp) S.shop.whatsapp = obj.shop.whatsapp; }
+        markDirty(); renderAll(); $('dSet').close(); toast('تم الاستيراد — اضغط «حفظ»');
+      } catch (err) { toast('الملف غير صالح', true); }
+    };
+    r.readAsText(f); input.value = '';
+  };
+
+  $('btnCopy').onclick = function () {
+    var u = shopUrl();
+    function done() { toast('تم نسخ الرابط'); }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(done, function () { prompt('انسخ الرابط', u); });
+    else prompt('انسخ الرابط', u);
+  };
+
+  var deferred = null;
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; $('btnInstall').hidden = false; });
+  $('btnInstall').onclick = function () { if (deferred) { deferred.prompt(); deferred = null; $('btnInstall').hidden = true; } };
+  window.addEventListener('beforeunload', function (e) { if (S.dirty) { e.preventDefault(); e.returnValue = ''; } });
+  try { if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js'); } catch (e) {}
+
+  /* ---------- البدء ---------- */
+  setMode('login');
+  if (!Cloud || !Cloud.configured()) show('sCfg'); else loadAccount();
+})();
+</script>
+</body>
+</html>

@@ -1,9 +1,11 @@
-/* TITAN admin — يعمل بدون إنترنت، لكنه يطلب أحدث نسخة أولاً حتى لا تبقى بيانات قديمة */
-var CACHE = 'titan-admin-v2';
-var FILES = ['admin.html', 'style.css', 'data.js', 'admin.webmanifest', 'icon-192.png', 'icon-512.png'];
+/* TITAN — يطلب أحدث نسخة أولاً ويعمل من الكاش عند انقطاع الإنترنت */
+var CACHE = 'titan-v3';
+var FILES = ['app.html', 'shop.html', 'style.css', 'config.js', 'cloud.js', 'qr.html', 'qr-lib.js', 'app.webmanifest', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', function (e) {
-  e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(FILES); }).then(function () { return self.skipWaiting(); }));
+  e.waitUntil(caches.open(CACHE).then(function (c) {
+    return Promise.all(FILES.map(function (f) { return c.add(f).catch(function () {}); }));
+  }).then(function () { return self.skipWaiting(); }));
 });
 self.addEventListener('activate', function (e) {
   e.waitUntil(caches.keys().then(function (ks) {
@@ -15,8 +17,7 @@ self.addEventListener('fetch', function (e) {
   if (new URL(e.request.url).origin !== self.location.origin) return;
   e.respondWith(
     fetch(e.request, { cache: 'no-store' }).then(function (res) {
-      var copy = res.clone();
-      caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
+      if (res && res.ok) { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put(e.request, copy); }); }
       return res;
     }).catch(function () { return caches.match(e.request); })
   );

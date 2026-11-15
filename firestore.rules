@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // متجر كل محل: القراءة للجميع (الزبائن)، والتعديل لصاحب المحل فقط
+    match /shops/{slug} {
+      allow read: if true;
+      allow create: if request.auth != null
+                    && request.resource.data.owner == request.auth.uid
+                    && slug.matches('^[a-z0-9-]{3,30}$');
+      allow update: if request.auth != null
+                    && resource.data.owner == request.auth.uid
+                    && request.resource.data.owner == request.auth.uid;
+    }
+
+    // ربط كل مستخدم بمتجره: لصاحبه فقط
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
