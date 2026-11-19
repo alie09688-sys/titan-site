@@ -6,6 +6,19 @@
 <meta name="theme-color" content="#05070b">
 <title>TITAN — متجر الكفرات</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  .model.has-ph { border-color: #1f4aa8; cursor: pointer; }
+  .model .tag.cam { color: #fff; background: var(--blue); border-radius: 999px; padding: 2px 8px; font-size: 11px; }
+  .gal { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 14px; }
+  @media (min-width: 560px) { .gal { grid-template-columns: repeat(3, 1fr); } }
+  .ph { display: block; background: var(--card); border: 1.5px solid var(--line); border-radius: 14px; overflow: hidden; color: var(--text); transition: border-color .15s, box-shadow .15s; }
+  a.ph:hover, a.ph:active { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-glow); }
+  .ph img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: #0a0f18; }
+  .ph .cap { padding: 10px 12px 12px; font-size: 13px; line-height: 1.6; }
+  .ph .cap b { display: block; color: var(--blue-2); font-size: 12px; margin-top: 2px; }
+  .ph .cap .code { color: var(--muted); font-size: 11px; direction: ltr; text-align: right; }
+  .loading { text-align: center; color: var(--muted); padding: 40px 0; }
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -55,7 +68,17 @@ window.startStore = function () {
     return 'https://wa.me/' + num + '?text=' + encodeURIComponent(txt);
   }
 
-  function modelHTML(brandName, m, showBrand) {
+  var counts = D.counts || {};
+  function photoCount(brandId, m) { return counts[TitanCloud.mk(brandId, m)] || 0; }
+
+  function modelHTML(brandName, m, showBrand, brandId) {
+    var n = photoCount(brandId, m);
+    if (n > 0) {
+      return '<a class="model has-ph" href="#/m/' + encodeURIComponent(brandId) + '/' + encodeURIComponent(m) + '">' +
+        '<span>' + esc(m) + '</span>' +
+        (showBrand ? '<span class="brandtag">' + esc(brandName) + '</span>' : '') +
+        '<span class="tag cam">📷 ' + n + '</span></a>';
+    }
     var link = waLink(brandName, m);
     var inner = '<span>' + esc(m) + '</span>' +
       (showBrand ? '<span class="brandtag">' + esc(brandName) + '</span>' : (link ? '<span class="tag">اطلب ›</span>' : ''));
@@ -102,10 +125,10 @@ window.startStore = function () {
     series.forEach(function (s, i) {
       if (cur !== -1 && cur !== i) return;
       h += (s.name ? '<div class="series-head"><span>' + esc(s.name) + '</span></div>' : '') + '<div class="models">';
-      s.models.forEach(function (m) { h += modelHTML(b.name, m, false); });
+      s.models.forEach(function (m) { h += modelHTML(b.name, m, false, b.id); });
       h += '</div>';
     });
-    if (shop.whatsapp) h += '<p class="hint">اضغط على الموديل لطلب الكفر عبر واتساب.</p>';
+    if (shop.whatsapp) h += '<p class="hint">الموديلات التي عليها 📷 فيها صور، اضغط عليها لترى الكفرات المتوفرة.</p>';
 
     view.innerHTML = h;
     bindBack();
@@ -128,7 +151,7 @@ window.startStore = function () {
         (s.models || []).forEach(function (m) {
           // يطابق اسم الموديل أو الماركة + الموديل (مثال: infinix hot 9)
           if (norm(m).indexOf(t) !== -1 || norm(b.name + m).indexOf(t) !== -1 || norm(s.name + m).indexOf(t) !== -1) {
-            res.push({ brand: b.name, model: m });
+            res.push({ brand: b.name, model: m, id: b.id });
           }
         });
       });
@@ -139,16 +162,63 @@ window.startStore = function () {
         (shop.whatsapp ? 'راسلنا على واتساب وسنؤمّنه لك.' : 'اسأل البائع في المحل.') + '</div>';
     } else {
       h += '<div class="models">';
-      res.forEach(function (r) { h += modelHTML(r.brand, r.model, true); });
+      res.forEach(function (r) { h += modelHTML(r.brand, r.model, true, r.id); });
       h += '</div>';
     }
     view.innerHTML = h;
+  }
+
+  /* ---------- معرض صور موديل ---------- */
+  var IMG_OK = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/;
+
+  function photoLink(brandName, model, it) {
+    var num = String(shop.whatsapp || '').replace(/[^\d]/g, '');
+    if (!num) return null;
+    var txt = 'مرحبا، أريد هذا الكفر:\n' + brandName + ' ' + model + '\nرمز الصورة: ' + (it.code || '') + (it.note ? '\n' + it.note : '');
+    return 'https://wa.me/' + num + '?text=' + encodeURIComponent(txt);
+  }
+
+  function galleryPage(brandId, model) {
+    var b = D.brands.filter(function (x) { return x.id === brandId; })[0];
+    if (!b) { location.hash = ''; return; }
+    var head = '<div class="topbar"><button class="back" id="gback" aria-label="رجوع">›</button>' +
+      '<div><h2 class="page-title" style="direction:ltr;font-size:22px">' + esc(model) + '</h2><p class="page-sub">' + esc(b.name) + '</p></div></div>';
+    view.innerHTML = head + '<div class="loading">جاري تحميل الصور...</div>';
+    var back = function () { location.hash = '#/brand/' + encodeURIComponent(brandId); };
+    document.getElementById('gback').onclick = back;
+    var key = TitanCloud.mk(brandId, model);
+    TitanCloud.itemsByModel(D.slug, key, 60).then(function (list) {
+      if (location.hash.indexOf('#/m/') !== 0) return;
+      list = list.filter(function (it) { return IMG_OK.test(it.img || ''); });
+      list.sort(function (a, c) { return String(c.created || '').localeCompare(String(a.created || '')); });
+      var h = head;
+      if (!list.length) {
+        var link = waLink(b.name, model);
+        h += '<div class="empty-state">لا توجد صور متوفرة لهذا الموديل الآن.' + (link ? '<br><a class="btn" style="display:inline-block;margin-top:12px;padding:10px 18px;border-radius:12px;background:var(--blue);color:#fff;font-weight:700" href="' + link + '" target="_blank" rel="noopener">اطلبه عبر واتساب</a>' : '') + '</div>';
+      } else {
+        h += '<p class="hint" style="margin-top:14px">' + (shop.whatsapp ? 'اضغط على الكفر الذي يعجبك لإرسال طلبك عبر واتساب.' : 'اذكر رمز الصورة للبائع في المحل.') + '</p><div class="gal">';
+        list.forEach(function (it) {
+          var l = photoLink(b.name, model, it);
+          var cap = '<div class="cap">' + (it.note ? esc(it.note) : '') + (shop.whatsapp ? '<b>اطلبه عبر واتساب ›</b>' : '') + '<div class="code">#' + esc(it.code || '') + '</div></div>';
+          var img = '<img loading="lazy" alt="" src="' + esc(it.img) + '">';
+          h += l ? '<a class="ph" href="' + l + '" target="_blank" rel="noopener">' + img + cap + '</a>' : '<div class="ph">' + img + cap + '</div>';
+        });
+        h += '</div>';
+      }
+      view.innerHTML = h;
+      document.getElementById('gback').onclick = back;
+    }).catch(function (e) {
+      view.innerHTML = head + '<div class="empty-state">' + esc(e.message) + '</div>';
+      document.getElementById('gback').onclick = back;
+    });
   }
 
   /* ---------- التوجيه ---------- */
   function route() {
     var text = q.value.trim();
     if (text) { searchPage(text); return; }
+    var g = location.hash.match(/^#\/m\/([^\/]+)\/(.+)$/);
+    if (g) { galleryPage(decodeURIComponent(g[1]), decodeURIComponent(g[2])); return; }
     var m = location.hash.match(/^#\/brand\/(.+)$/);
     if (m) { brandPage(decodeURIComponent(m[1])); } else { home(); }
   }
@@ -170,11 +240,13 @@ window.startStore = function () {
   var CK = 'titan_shop_cache_' + slug;
 
   function msg(t) { view.innerHTML = '<div class="empty-state">' + t + '</div>'; }
-  function apply(o) {
-    var data = {};
+  function build(o) {
+    var data = {}, counts = {};
     try { data = JSON.parse(o.data || '{}'); } catch (e) {}
-    window.TITAN_DATA = { shop: { name: o.name || '', tagline: o.tagline || '', whatsapp: o.whatsapp || '' }, brands: data.brands || [] };
+    try { counts = JSON.parse(o.counts || '{}') || {}; } catch (e) {}
+    return { slug: slug, shop: { name: o.name || '', tagline: o.tagline || '', whatsapp: o.whatsapp || '' }, brands: data.brands || [], counts: counts };
   }
+  function apply(o) { window.TITAN_DATA = build(o); }
 
   if (!slug) { msg('رابط المتجر غير مكتمل.<br>امسح رمز QR الخاص بالمحل مرة أخرى.'); return; }
   if (!window.TitanCloud || !TitanCloud.configured()) { msg('المتجر غير جاهز بعد.'); return; }
@@ -187,7 +259,7 @@ window.startStore = function () {
   TitanCloud.getPublic('shops/' + slug).then(function (o) {
     try { localStorage.setItem(CK, JSON.stringify(o)); } catch (e) {}
     if (!started) { apply(o); started = true; startStore(); }
-    else if (JSON.stringify(window.TITAN_DATA) !== JSON.stringify((function () { var d = {}; try { d = JSON.parse(o.data || '{}'); } catch (e) {} return { shop: { name: o.name || '', tagline: o.tagline || '', whatsapp: o.whatsapp || '' }, brands: d.brands || [] }; })())) {
+    else if (JSON.stringify(window.TITAN_DATA) !== JSON.stringify(build(o))) {
       location.reload(); // وصلت بيانات أحدث من الخادم
     }
   }).catch(function (e) {

@@ -13,6 +13,17 @@ service cloud.firestore {
                     && request.resource.data.owner == request.auth.uid;
     }
 
+    // صور الكفرات: القراءة للجميع، والكتابة والحذف لصاحب المحل فقط
+    match /shops/{slug}/items/{item} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+                            && get(/databases/$(database)/documents/shops/$(slug)).data.owner == request.auth.uid
+                            && request.resource.data.img is string
+                            && request.resource.data.img.size() < 300000;
+      allow delete: if request.auth != null
+                    && get(/databases/$(database)/documents/shops/$(slug)).data.owner == request.auth.uid;
+    }
+
     // ربط كل مستخدم بمتجره: لصاحبه فقط
     match /users/{uid} {
       allow read, write: if request.auth != null && request.auth.uid == uid;

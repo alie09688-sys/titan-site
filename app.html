@@ -64,6 +64,12 @@
   .actbar .in { max-width: 720px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .actbar .btn { padding: 16px; font-size: 18px; }
 
+  .tagm .cam { color: #8db8ff; font-family: var(--font-ar); font-size: 12px; padding: 0 2px; }
+  .gal { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 12px 0; }
+  .gi { position: relative; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .gi img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
+  .gi .gc { padding: 7px 9px; font-size: 12px; color: var(--muted); line-height: 1.5; word-break: break-word; }
+  .gi .gx { position: absolute; top: 6px; left: 6px; background: rgba(5,7,11,.85); color: #ff8a97; border: 1.5px solid #5a2430; border-radius: 9px; padding: 5px 9px; font-size: 12px; font-weight: 700; }
   dialog { background: var(--bg-2); color: var(--text); border: 1.5px solid var(--blue); border-radius: 16px; width: min(520px, 94vw); padding: 18px; max-height: 92vh; overflow: auto; }
   dialog::backdrop { background: rgba(0, 0, 0, .75); }
   dialog h3 { margin: 0 0 14px; }
@@ -178,6 +184,24 @@
   <p class="note" id="acct"></p>
 </dialog>
 
+<!-- نافذة الموديل والصور -->
+<dialog id="dModel">
+  <h3 id="mTitle" style="direction:ltr;text-align:right"></h3>
+  <p class="note" style="margin-top:-6px">الصور تُحفظ وتظهر للزبائن فوراً، ولا تحتاج زر «حفظ». عند بيع كفر اضغط «تم البيع» تحت صورته لتختفي من المتجر.</p>
+  <div id="mGal"></div>
+  <label class="fld"><span>ملاحظة تظهر تحت الصور الجديدة (اختياري، مثل السعر)</span><input class="t" id="mNote" maxlength="60" placeholder="مثال: 15,000 ل.س"></label>
+  <input type="file" id="mFile" accept="image/*" multiple hidden>
+  <p class="err" id="mErr"></p>
+  <div class="row">
+    <button class="btn primary" id="mAdd">📷 إضافة صور</button>
+    <button class="btn" id="mClose">إغلاق</button>
+  </div>
+  <div class="row" style="margin-top:14px">
+    <button class="btn sm" id="mRen">تعديل اسم الموديل</button>
+    <button class="btn sm danger" id="mDelModel">حذف الموديل</button>
+  </div>
+</dialog>
+
 <div class="toast" id="toast"></div>
 
 <script src="config.js"></script>
@@ -192,7 +216,7 @@
   var Cloud = window.TitanCloud;
   var DRAFT = 'titan_app_draft_v2';
   var DEFAULT_BRANDS = ['Samsung', 'iPhone', 'Xiaomi', 'Huawei', 'Tecno', 'Infinix', 'Oppo', 'Realme', 'Honor'];
-  var S = { slug: '', shop: { name: '', tagline: '', whatsapp: '' }, brands: [], dirty: false, cur: 0 };
+  var S = { slug: '', shop: { name: '', tagline: '', whatsapp: '' }, brands: [], counts: {}, dirty: false, cur: 0 };
   var BASE = location.origin + location.pathname.replace(/[^\/]*$/, '');
 
   function shopUrl() { return BASE + 'shop.html?s=' + S.slug; }
@@ -237,7 +261,7 @@
     Cloud.resetPassword(email).then(function () { toast('أرسلنا رابط تغيير كلمة السر إلى بريدك'); }).catch(function (e) { $('authErr').textContent = e.message; });
   };
 
-  function logout() { Cloud.signOut(); clearDraft(); S = { slug: '', shop: { name: '', tagline: '', whatsapp: '' }, brands: [], dirty: false, cur: 0 }; try { $('dSet').close(); } catch (e) {} setMode('login'); show('sAuth'); }
+  function logout() { Cloud.signOut(); clearDraft(); S = { slug: '', shop: { name: '', tagline: '', whatsapp: '' }, brands: [], counts: {}, dirty: false, cur: 0 }; try { $('dSet').close(); } catch (e) {} setMode('login'); show('sAuth'); }
   $('errOut').onclick = logout; $('oOut').onclick = logout; $('btnOut').onclick = logout;
 
   function fail(e) {
@@ -260,6 +284,7 @@
     Cloud.getPublic('shops/' + slug).then(function (o) {
       var data = {}; try { data = JSON.parse(o.data || '{}'); } catch (e) {}
       S.slug = slug; S.shop = { name: o.name || '', tagline: o.tagline || '', whatsapp: o.whatsapp || '' }; S.brands = data.brands || []; S.dirty = false; S.cur = 0;
+      try { S.counts = JSON.parse(o.counts || '{}') || {}; } catch (e) { S.counts = {}; }
       var d = loadDraft(slug);
       if (d) { S.shop = d.shop; S.brands = d.brands; S.dirty = true; }
       renderAll(); show('sMain');
@@ -311,11 +336,13 @@
     var b = S.brands[S.cur], h = '';
     if (!b) { $('content').innerHTML = '<div class="empty-state">أضف أول كفراتك بزر «＋ إضافة» في الأسفل.</div>'; return; }
     h += '<div class="bh"><b>' + esc(b.name) + '</b><button class="btn sm danger" data-act="delbrand">حذف الماركة</button></div>';
+    h += '<p class="note" style="margin:0 2px 4px">اضغط على اسم أي موديل لإضافة صور كفراته أو إدارتها.</p>';
     if (!(b.series || []).length) h += '<div class="empty-state" style="padding:28px 12px">لا توجد موديلات لهذه الماركة.<br>اضغط «＋ إضافة».</div>';
     (b.series || []).forEach(function (s, si) {
       h += '<div class="sh"><b>' + esc(s.name || 'بدون سلسلة') + '</b><span class="acts"><button class="btn sm" data-act="rensr" data-s="' + si + '">تسمية</button><button class="btn sm danger" data-act="delsr" data-s="' + si + '">حذف</button></span></div><div class="tags">';
       (s.models || []).forEach(function (m, mi) {
-        h += '<span class="tagm"><span class="ed" data-act="edm" data-s="' + si + '" data-m="' + mi + '">' + esc(m) + '</span><button data-act="delm" data-s="' + si + '" data-m="' + mi + '" aria-label="حذف">×</button></span>';
+        var pc = S.counts[Cloud.mk(b.id, m)] || 0;
+        h += '<span class="tagm"><span class="ed" data-act="mdl" data-s="' + si + '" data-m="' + mi + '">' + esc(m) + '</span>' + (pc ? '<span class="cam">📷' + pc + '</span>' : '') + '<button data-act="delm" data-s="' + si + '" data-m="' + mi + '" aria-label="حذف">×</button></span>';
       });
       h += '</div>';
     });
@@ -329,11 +356,25 @@
     var a = t.getAttribute && t.getAttribute('data-act'); if (!a) return;
     var b = S.brands[S.cur]; if (!b) return;
     var si = parseInt(t.getAttribute('data-s'), 10), mi = parseInt(t.getAttribute('data-m'), 10);
-    if (a === 'delm') { b.series[si].models.splice(mi, 1); markDirty(); renderAll(); }
-    else if (a === 'edm') { var nv = prompt('تعديل اسم الموديل', b.series[si].models[mi]); if (nv && nv.trim()) { b.series[si].models[mi] = nv.trim(); markDirty(); renderAll(); } }
-    else if (a === 'delsr') { if (confirm('حذف السلسلة وكل موديلاتها؟')) { b.series.splice(si, 1); markDirty(); renderAll(); } }
+    if (a === 'delm') {
+      var mname = b.series[si].models[mi], mkey = Cloud.mk(b.id, mname), pc = S.counts[mkey] || 0;
+      if (pc && !confirm('سيُحذف الموديل مع ' + pc + ' صورة. متابعة؟')) return;
+      purge(pc ? [mkey] : []).then(function () { b.series[si].models.splice(mi, 1); markDirty(); renderAll(); }).catch(function (er) { toast(er.message, true); });
+    }
+    else if (a === 'mdl') { openModel(si, mi); }
+    else if (a === 'delsr') {
+      var sk = (b.series[si].models || []).map(function (m) { return Cloud.mk(b.id, m); }).filter(function (k) { return S.counts[k]; });
+      var sn = sk.reduce(function (n, k) { return n + S.counts[k]; }, 0);
+      if (!confirm(sn ? 'حذف السلسلة وكل موديلاتها و' + sn + ' صورة؟' : 'حذف السلسلة وكل موديلاتها؟')) return;
+      purge(sk).then(function () { b.series.splice(si, 1); markDirty(); renderAll(); }).catch(function (er) { toast(er.message, true); });
+    }
     else if (a === 'rensr') { var n = prompt('اسم السلسلة', b.series[si].name); if (n !== null) { b.series[si].name = n.trim(); markDirty(); renderAll(); } }
-    else if (a === 'delbrand') { if (confirm('حذف الماركة «' + b.name + '» وكل موديلاتها؟')) { S.brands.splice(S.cur, 1); S.cur = 0; markDirty(); renderAll(); } }
+    else if (a === 'delbrand') {
+      var bk = Object.keys(S.counts).filter(function (k) { return k.indexOf(b.id + '|') === 0; });
+      var bn = bk.reduce(function (n, k) { return n + S.counts[k]; }, 0);
+      if (!confirm(bn ? 'حذف الماركة «' + b.name + '» وكل موديلاتها و' + bn + ' صورة؟' : 'حذف الماركة «' + b.name + '» وكل موديلاتها؟')) return;
+      purge(bk).then(function () { S.brands.splice(S.cur, 1); S.cur = 0; markDirty(); renderAll(); }).catch(function (er) { toast(er.message, true); });
+    }
   });
 
   /* ---------- الإضافة ---------- */
@@ -388,6 +429,132 @@
       toast(e.message, true);
     });
   };
+
+  /* ---------- الصور ---------- */
+  function mkOf(b, m) { return Cloud.mk(b.id, m); }
+  function saveCounts() { return Cloud.patchDoc('shops/' + S.slug, { counts: JSON.stringify(S.counts) }); }
+  function setCount(mk, n) { if (n > 0) S.counts[mk] = n; else delete S.counts[mk]; return saveCounts(); }
+
+  // حذف كل صور مجموعة موديلات (عند حذف موديل أو سلسلة أو ماركة)
+  function purge(keys) {
+    if (!keys.length) return Promise.resolve();
+    toast('جاري حذف الصور...');
+    var chain = Promise.resolve();
+    keys.forEach(function (k) {
+      chain = chain.then(function () {
+        return Cloud.itemsByModel(S.slug, k, 300).then(function (list) {
+          var c = Promise.resolve();
+          list.forEach(function (it) { c = c.then(function () { return Cloud.deleteDoc('shops/' + S.slug + '/items/' + it._id); }); });
+          return c;
+        }).then(function () { delete S.counts[k]; });
+      });
+    });
+    return chain.then(saveCounts);
+  }
+
+  var M = { b: null, si: 0, mi: 0, model: '', mk: '', items: [] };
+
+  function openModel(si, mi) {
+    var b = S.brands[S.cur]; M.b = b; M.si = si; M.mi = mi; M.model = b.series[si].models[mi]; M.mk = mkOf(b, M.model); M.items = [];
+    $('mTitle').textContent = b.name + ' — ' + M.model; $('mErr').textContent = '';
+    $('mGal').innerHTML = '<p class="note">جاري تحميل الصور...</p>';
+    $('dModel').showModal(); loadItems();
+  }
+  function loadItems() {
+    var key = M.mk;
+    Cloud.itemsByModel(S.slug, key, 60).then(function (list) {
+      if (M.mk !== key) return;
+      list.sort(function (a, c) { return String(c.created || '').localeCompare(String(a.created || '')); });
+      M.items = list; renderGal();
+      if ((S.counts[key] || 0) !== list.length) setCount(key, list.length).catch(function () {});
+    }).catch(function (e) { $('mGal').innerHTML = ''; $('mErr').textContent = e.message; });
+  }
+  var IMG_OK = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/;
+  function renderGal() {
+    if (!M.items.length) { $('mGal').innerHTML = '<p class="note" style="margin:10px 0">لا توجد صور لهذا الموديل بعد. اضغط «إضافة صور».</p>'; return; }
+    var h = '<div class="gal">';
+    M.items.forEach(function (it) {
+      if (!IMG_OK.test(it.img || '')) return;
+      h += '<div class="gi"><img alt="" src="' + esc(it.img) + '"><button class="gx" data-id="' + esc(it._id) + '">تم البيع 🗑</button>' +
+        '<div class="gc">#' + esc(it.code || '') + (it.note ? ' · ' + esc(it.note) : '') + '</div></div>';
+    });
+    $('mGal').innerHTML = h + '</div>';
+  }
+
+  $('mGal').addEventListener('click', function (e) {
+    var id = e.target.getAttribute && e.target.getAttribute('data-id'); if (!id) return;
+    if (!confirm('حذف هذه الصورة من المتجر (تم بيع الكفر)؟')) return;
+    var key = M.mk;
+    Cloud.deleteDoc('shops/' + S.slug + '/items/' + id).then(function () {
+      M.items = M.items.filter(function (x) { return x._id !== id; }); renderGal();
+      return setCount(key, M.items.length);
+    }).then(function () { toast('تم حذف الصورة من المتجر'); }).catch(function (er) { toast(er.message, true); });
+  });
+
+  function compress(file) {
+    return new Promise(function (res, rej) {
+      var url = URL.createObjectURL(file), im = new Image();
+      im.onload = function () {
+        URL.revokeObjectURL(url);
+        var max = 640, w = im.naturalWidth, h = im.naturalHeight, r = Math.min(1, max / Math.max(w, h));
+        var cw = Math.max(1, Math.round(w * r)), ch = Math.max(1, Math.round(h * r));
+        var cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+        var x = cv.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, cw, ch); x.drawImage(im, 0, 0, cw, ch);
+        var q = 0.72, out = cv.toDataURL('image/jpeg', q);
+        while (out.length > 140000 && q > 0.4) { q -= 0.08; out = cv.toDataURL('image/jpeg', q); }
+        if (out.length > 250000) return rej(new Error('الصورة كبيرة جداً، جرّب صورة أخرى.'));
+        res(out);
+      };
+      im.onerror = function () { URL.revokeObjectURL(url); rej(new Error('تعذّر قراءة الصورة.')); };
+      im.src = url;
+    });
+  }
+  function newCode() { return Math.random().toString(36).slice(2, 7).toUpperCase(); }
+  function createItem(payload, tries) {
+    var code = newCode(); payload.code = code;
+    return Cloud.createDoc('shops/' + S.slug + '/items', code, payload).catch(function (e) {
+      if (e.code === 'TAKEN' && (tries || 0) < 3) return createItem(payload, (tries || 0) + 1);
+      throw e;
+    });
+  }
+
+  $('mAdd').onclick = function () { $('mFile').click(); };
+  $('mFile').onchange = function () {
+    var files = Array.prototype.slice.call(this.files); this.value = '';
+    if (!files.length) return;
+    var note = $('mNote').value.trim(), key = M.mk, bname = M.b.name, model = M.model, btn = $('mAdd'), added = 0, firstErr = '';
+    btn.disabled = true; $('mErr').textContent = '';
+    var chain = Promise.resolve();
+    files.forEach(function (f, i) {
+      chain = chain.then(function () {
+        btn.textContent = 'جاري رفع ' + (i + 1) + ' من ' + files.length + '...';
+        return compress(f).then(function (img) {
+          return createItem({ mk: key, brand: bname, model: model, img: img, note: note, created: new Date().toISOString() });
+        }).then(function () { added++; }).catch(function (e) { if (!firstErr) firstErr = e.message; if (e.code === 'SESSION') throw e; });
+      });
+    });
+    chain.then(function () {
+      if (added) return setCount(key, (S.counts[key] || 0) + added);
+    }).catch(function (e) { firstErr = firstErr || e.message; }).then(function () {
+      btn.disabled = false; btn.textContent = '📷 إضافة صور';
+      if (firstErr) $('mErr').textContent = firstErr;
+      if (added) { toast('تمت إضافة ' + added + ' صورة'); $('mNote').value = ''; }
+      if (M.mk === key) loadItems();
+    });
+  };
+
+  $('mRen').onclick = function () {
+    if (S.counts[M.mk]) { $('mErr').textContent = 'احذف صور هذا الموديل أولاً (أو اضغط تم البيع تحت كل صورة)، ثم غيّر اسمه.'; return; }
+    var nv = prompt('تعديل اسم الموديل', M.model);
+    if (nv && nv.trim()) { M.b.series[M.si].models[M.mi] = nv.trim(); markDirty(); $('dModel').close(); renderAll(); }
+  };
+  $('mDelModel').onclick = function () {
+    var pc = S.counts[M.mk] || 0;
+    if (!confirm(pc ? 'سيُحذف الموديل مع ' + pc + ' صورة. متابعة؟' : 'حذف هذا الموديل؟')) return;
+    purge(pc ? [M.mk] : []).then(function () { M.b.series[M.si].models.splice(M.mi, 1); markDirty(); $('dModel').close(); renderAll(); }).catch(function (e) { $('mErr').textContent = e.message; });
+  };
+  $('mClose').onclick = function () { $('dModel').close(); renderAll(); };
+  $('dModel').addEventListener('close', renderAll);
 
   /* ---------- الإعدادات ---------- */
   $('btnSet').onclick = function () {

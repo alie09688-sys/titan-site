@@ -35,6 +35,9 @@ window.TITAN_CFG = {
 EOF
 cd ~/titan-site && git add -A && git commit -m "firebase config" && git push
 
+ملاحظة (صور الكفرات): إذا حدّثت التطبيق لاحقاً، أعد لصق firestore.rules في Rules ثم Publish
+حتى تعمل الصور. في التطبيق اضغط اسم الموديل لإضافة صور أو حذفها (تم البيع).
+
 ثالثاً: جرّب
 -------------
 افتح  https://alie09688-sys.github.io/titan-site/app.html

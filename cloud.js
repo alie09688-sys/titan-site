@@ -151,7 +151,28 @@
     return authed('PATCH', docs() + '/' + path + '?' + mask, toFields(obj)).then(fromDoc);
   }
 
+  function deleteDoc(path) { return authed('DELETE', docs() + '/' + path).then(function () { return true; }); }
+
+  function parseRun(arr) {
+    return (Array.isArray(arr) ? arr : []).filter(function (x) { return x && x.document; }).map(function (x) {
+      var o = fromDoc(x.document); o._id = x.document.name.split('/').pop(); return o;
+    });
+  }
+  // صور موديل واحد (قراءة عامة بدون تسجيل دخول)
+  function itemsByModel(slug, mk, limit) {
+    if (!configured()) return Promise.reject(mkErr('CONFIG'));
+    var q = { from: [{ collectionId: 'items' }], where: { fieldFilter: { field: { fieldPath: 'mk' }, op: 'EQUAL', value: { stringValue: mk } } }, limit: limit || 40 };
+    return req(docs() + '/shops/' + encodeURIComponent(slug) + ':runQuery', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ structuredQuery: q }), cache: 'no-store'
+    }).then(function (r) {
+      return jsonOrEmpty(r).then(function (j) { if (!r.ok) throw fsError(r, j); return parseRun(j); });
+    });
+  }
+  // مفتاح الموديل: يجب أن يكون واحداً في التطبيق والمتجر
+  function mk(brandId, model) { return String(brandId) + '|' + String(model).toLowerCase().replace(/\s+/g, ' ').trim(); }
+
   window.TitanCloud = {
+    deleteDoc: deleteDoc, itemsByModel: itemsByModel, mk: mk,
     configured: configured, session: getSession,
     signUp: signUp, signIn: signIn, signOut: signOut, resetPassword: resetPassword,
     getPublic: getPublic, getMine: getMine, createDoc: createDoc, patchDoc: patchDoc
