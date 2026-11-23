@@ -257,6 +257,10 @@ window.startStore = function () {
   if (!started) msg('جاري التحميل...');
 
   TitanCloud.getPublic('shops/' + slug).then(function (o) {
+    if (o.active === 'off') {
+      try { localStorage.removeItem(CK); } catch (e) {}
+      msg('هذا المتجر متوقف مؤقتاً.<br>يرجى التواصل مع صاحب المحل.'); return;
+    }
     try { localStorage.setItem(CK, JSON.stringify(o)); } catch (e) {}
     if (!started) { apply(o); started = true; startStore(); }
     else if (JSON.stringify(window.TITAN_DATA) !== JSON.stringify(build(o))) {

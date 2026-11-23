@@ -7,10 +7,13 @@ service cloud.firestore {
       allow read: if true;
       allow create: if request.auth != null
                     && request.resource.data.owner == request.auth.uid
+                    && !('active' in request.resource.data)
                     && slug.matches('^[a-z0-9-]{3,30}$');
       allow update: if request.auth != null
                     && resource.data.owner == request.auth.uid
-                    && request.resource.data.owner == request.auth.uid;
+                    && request.resource.data.owner == request.auth.uid
+                    && request.resource.data.get('active', '') == resource.data.get('active', '')
+                    && resource.data.get('active', '') != 'off';
     }
 
     // صور الكفرات: القراءة للجميع، والكتابة والحذف لصاحب المحل فقط
@@ -18,6 +21,7 @@ service cloud.firestore {
       allow read: if true;
       allow create, update: if request.auth != null
                             && get(/databases/$(database)/documents/shops/$(slug)).data.owner == request.auth.uid
+                            && get(/databases/$(database)/documents/shops/$(slug)).data.get('active', '') != 'off'
                             && request.resource.data.img is string
                             && request.resource.data.img.size() < 300000;
       allow delete: if request.auth != null

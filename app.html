@@ -283,11 +283,12 @@
   function loadShop(slug) {
     Cloud.getPublic('shops/' + slug).then(function (o) {
       var data = {}; try { data = JSON.parse(o.data || '{}'); } catch (e) {}
-      S.slug = slug; S.shop = { name: o.name || '', tagline: o.tagline || '', whatsapp: o.whatsapp || '' }; S.brands = data.brands || []; S.dirty = false; S.cur = 0;
+      S.suspended = (o.active === 'off'); S.slug = slug; S.shop = { name: o.name || '', tagline: o.tagline || '', whatsapp: o.whatsapp || '' }; S.brands = data.brands || []; S.dirty = false; S.cur = 0;
       try { S.counts = JSON.parse(o.counts || '{}') || {}; } catch (e) { S.counts = {}; }
       var d = loadDraft(slug);
       if (d) { S.shop = d.shop; S.brands = d.brands; S.dirty = true; }
       renderAll(); show('sMain');
+      if (S.suspended) alert('⛔ اشتراك هذا المحل متوقف.\nلا يمكن الحفظ أو إضافة صور. تواصل مع المطوّر لإعادة التفعيل.');
     }).catch(function (e) { if (e.code === 'NOT_FOUND') startOnboarding(); else fail(e); });
   }
 
@@ -417,6 +418,7 @@
   /* ---------- الحفظ ---------- */
   $('btnSave').onclick = function () {
     if (!S.slug) return;
+    if (S.suspended) { alert('⛔ الاشتراك متوقف. تواصل مع المطوّر.'); return; }
     var b = $('btnSave'), old = b.textContent; b.disabled = true; b.textContent = 'جاري الحفظ...';
     Cloud.patchDoc('shops/' + S.slug, {
       name: S.shop.name, tagline: S.shop.tagline, whatsapp: S.shop.whatsapp,
