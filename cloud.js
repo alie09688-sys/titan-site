@@ -25,6 +25,7 @@
     TAKEN: 'اسم الرابط مستعمل من محل آخر، اختر اسماً مختلفاً.',
     DENIED: 'لا توجد صلاحية. سجّل الخروج ثم ادخل من جديد.',
     NETWORK: 'تعذّر الاتصال بالإنترنت. تأكد من الشبكة وأعد المحاولة.',
+    INVITE: 'كود التفعيل غير صحيح أو مستعمل. تواصل مع البائع للحصول على كود جديد.',
     NOT_FOUND: 'غير موجود.',
     SESSION: 'انتهت الجلسة، سجّل الدخول من جديد.',
     CONFIG: 'لم يُضبط الاتصال بقاعدة البيانات بعد.'
@@ -151,6 +152,17 @@
     return authed('PATCH', docs() + '/' + path + '?' + mask, toFields(obj)).then(fromDoc);
   }
 
+  // إنشاء المحل واستهلاك كود التفعيل في عملية واحدة (لا يمكن استعمال الكود مرتين)
+  function createShop(slug, obj, code) {
+    var base = 'projects/' + C.projectId + '/databases/(default)/documents/';
+    var shop = toFields(obj);
+    var body = { writes: [
+      { update: { name: base + 'shops/' + slug, fields: shop.fields }, currentDocument: { exists: false } },
+      { update: { name: base + 'invites/' + code, fields: { used: { stringValue: slug } } }, updateMask: { fieldPaths: ['used'] }, currentDocument: { exists: true } }
+    ] };
+    return authed('POST', docs() + ':commit', body).then(function () { return true; });
+  }
+
   function deleteDoc(path) { return authed('DELETE', docs() + '/' + path).then(function () { return true; }); }
 
   function parseRun(arr) {
@@ -172,7 +184,7 @@
   function mk(brandId, model) { return String(brandId) + '|' + String(model).toLowerCase().replace(/\s+/g, ' ').trim(); }
 
   window.TitanCloud = {
-    deleteDoc: deleteDoc, itemsByModel: itemsByModel, mk: mk,
+    err: mkErr, deleteDoc: deleteDoc, createShop: createShop, itemsByModel: itemsByModel, mk: mk,
     configured: configured, session: getSession,
     signUp: signUp, signIn: signIn, signOut: signOut, resetPassword: resetPassword,
     getPublic: getPublic, getMine: getMine, createDoc: createDoc, patchDoc: patchDoc

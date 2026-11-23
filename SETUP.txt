@@ -38,6 +38,15 @@ cd ~/titan-site && git add -A && git commit -m "firebase config" && git push
 ملاحظة (صور الكفرات): إذا حدّثت التطبيق لاحقاً، أعد لصق firestore.rules في Rules ثم Publish
 حتى تعمل الصور. في التطبيق اضغط اسم الموديل لإضافة صور أو حذفها (تم البيع).
 
+أكواد التفعيل (لكل عميل جديد)
+------------------------------
+في Firebase: Firestore ثم Data ثم Start collection (أو Add document):
+  Collection ID:  invites
+  Document ID:    اكتب كوداً من 10 أحرف وأرقام إنجليزية، مثل  K7M2QX9PA4
+  Field:          used   النوع string   والقيمة فارغة (اتركها فارغة)
+أعطِ الكود للعميل. يكتبه عند إنشاء المحل، ويُستهلك مرة واحدة.
+إيقاف محل: في shops/اسم_المحل أضف حقل active (string) بقيمة off.
+
 ثالثاً: جرّب
 -------------
 افتح  https://alie09688-sys.github.io/titan-site/app.html

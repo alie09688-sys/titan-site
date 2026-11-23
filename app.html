@@ -121,6 +121,7 @@
       <label class="fld"><span>اسم رابط المتجر (إنجليزي)</span><input class="t ltr" id="oSlug" placeholder="alnoor" autocapitalize="none" autocomplete="off"></label>
       <div class="preview" id="oPrev"></div>
       <p class="note">3 إلى 30 حرفاً: إنجليزية صغيرة وأرقام وشرطة. لا يمكن تغييره لاحقاً لأن رمز QR المطبوع يعتمد عليه.</p>
+      <label class="fld"><span>كود التفعيل (يعطيك إياه البائع)</span><input class="t ltr" id="oInv" placeholder="XXXXXXXXXX" autocapitalize="none" autocomplete="off"></label>
       <button class="btn primary block" id="oGo" style="margin-top:14px">إنشاء المتجر</button>
       <div style="text-align:center;margin-top:10px"><button class="link" id="oOut">تسجيل الخروج</button></div>
     </div>
@@ -305,14 +306,20 @@
     $('onbErr').textContent = '';
     if (!name) { $('onbErr').textContent = 'اكتب اسم المحل.'; return; }
     if (!/^[a-z0-9-]{3,30}$/.test(slug)) { $('onbErr').textContent = 'اسم الرابط: 3 إلى 30 حرفاً إنجليزية صغيرة وأرقاماً وشرطة.'; return; }
+    var inv = $('oInv').value.trim();
+    if (!/^[A-Za-z0-9]{8,32}$/.test(inv)) { $('onbErr').textContent = 'اكتب كود التفعيل (8 أحرف أو أكثر).'; return; }
     if (!ses) { logout(); return; }
     var b = $('oGo'); b.disabled = true;
-    var payload = { owner: ses.uid, name: name, tagline: 'كفرات و إكسسوارات الهواتف', whatsapp: '', data: JSON.stringify({ brands: DEFAULT_BRANDS.map(function (n) { return { id: idOf(n), name: n, series: [] }; }) }), updated: new Date().toISOString() };
-    Cloud.createDoc('shops', slug, payload)
+    var payload = { owner: ses.uid, name: name, tagline: 'كفرات و إكسسوارات الهواتف', whatsapp: '', data: JSON.stringify({ brands: DEFAULT_BRANDS.map(function (n) { return { id: idOf(n), name: n, series: [] }; }) }), updated: new Date().toISOString(), invite: inv };
+    Cloud.createShop(slug, payload, inv)
       .catch(function (e) {
-        if (e.code !== 'TAKEN') throw e;
-        // ربما أنشأه هذا المستخدم نفسه سابقاً
-        return Cloud.getPublic('shops/' + slug).then(function (o) { if (o.owner !== ses.uid) throw e; });
+        // ربما أنشأه هذا المستخدم نفسه سابقاً، أو الاسم مستعمل، أو الكود خاطئ
+        return Cloud.getPublic('shops/' + slug).then(function (o) {
+          if (o.owner !== ses.uid) throw Cloud.err('TAKEN');
+        }, function (e2) {
+          if (e2.code === 'NOT_FOUND' && (e.code === 'DENIED' || e.code === 'TAKEN' || e.code === 'OTHER')) throw Cloud.err('INVITE');
+          throw e;
+        });
       })
       .then(function () { return Cloud.patchDoc('users/' + ses.uid, { slug: slug }); })
       .then(function () { b.disabled = false; clearDraft(); loadShop(slug); })

@@ -8,6 +8,9 @@ service cloud.firestore {
       allow create: if request.auth != null
                     && request.resource.data.owner == request.auth.uid
                     && !('active' in request.resource.data)
+                    && request.resource.data.invite is string
+                    && get(/databases/$(database)/documents/invites/$(request.resource.data.invite)).data.used == ''
+                    && getAfter(/databases/$(database)/documents/invites/$(request.resource.data.invite)).data.used == slug
                     && slug.matches('^[a-z0-9-]{3,30}$');
       allow update: if request.auth != null
                     && resource.data.owner == request.auth.uid
@@ -26,6 +29,17 @@ service cloud.firestore {
                             && request.resource.data.img.size() < 300000;
       allow delete: if request.auth != null
                     && get(/databases/$(database)/documents/shops/$(slug)).data.owner == request.auth.uid;
+    }
+
+    // أكواد التفعيل: تنشئها أنت من Firebase، ويستهلكها العميل مرة واحدة فقط
+    match /invites/{code} {
+      allow get: if false;
+      allow list: if false;
+      allow update: if request.auth != null
+                    && resource.data.used == ''
+                    && request.resource.data.used is string
+                    && request.resource.data.used != ''
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['used']);
     }
 
     // ربط كل مستخدم بمتجره: لصاحبه فقط
